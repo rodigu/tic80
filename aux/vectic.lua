@@ -1,3 +1,4 @@
+---@meta vectic
 
 ---@class Vectic
 ---@field x number

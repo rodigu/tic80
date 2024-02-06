@@ -1,2 +1,2 @@
 target:g
-in:kos/game,kos/garde
+in:aux/vectic,aux/linked_list,kos/garde,kos/game

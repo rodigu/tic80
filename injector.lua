@@ -53,7 +53,15 @@ end
 function InsertInputs(new, input_names)
   for _,input_name in ipairs(input_names) do
     local input_data = ReadFile(input_name..'.lua')
-    ConcatTable(new, input_data)
+    ---@type string[]
+    local no_comments_data = {}
+    for _,l in ipairs(input_data) do
+      if string.find(l,'---@') == nil then
+        table.insert(no_comments_data, l)
+      end
+
+    end
+    ConcatTable(new, no_comments_data)
   end
 end
 
