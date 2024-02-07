@@ -166,7 +166,9 @@ function Garde.new(x,y)
     boost=8,
     rot_sp=math.pi/30,
     path=LinkedList.new(Vectic.new(x,y)),
-    track_path=false
+    track_path=false,
+    maxhiggs=1000,
+    higgs=1000
   }
   setmetatable(g, Garde)
   return g
@@ -194,24 +196,43 @@ function Garde.draw(s, pos)
   end
 
   local rad = 3
-	circ(pos.x, pos.y, rad, 13)
+	circ(pos.x, pos.y, rad, 12)
   local dir = s.dir:normalize()
   local p1 = (dir*9):rotate(.2) + pos
   local p2 = (dir*9):rotate(-.2) + pos
   local p3 = (dir*2):rotate(-math.pi *.7) + pos
   local p4 = (dir*2):rotate(math.pi * .7) + pos
 
-  tri(p1.x,p1.y,p2.x,p2.y,p3.x,p3.y,13)
-  tri(p1.x,p1.y,p2.x,p2.y,p4.x,p4.y,13)
+  tri(p1.x,p1.y,p2.x,p2.y,p3.x,p3.y,12)
+  tri(p1.x,p1.y,p3.x,p3.y,p4.x,p4.y,12)
+
+  s:UI()
+end
+
+function ProgressBar(pos,curr,max,size,col)
+  if col==nil then col=6 end
+  rect(pos.x-1,pos.y-1,size.y+2,size.x+2,12)
+  rect(pos.x,pos.y,size.y*curr/max,size.x,col)
+end
+
+function Garde.UI(s)
+  ProgressBar(Vectic.new(2,2),s.higgs,s.maxhiggs,Vectic.new(5,30),7)
 end
 
 local F=0
 function Garde.move(s)
   F=F+1
-  if btn(4) then
+  if s.higgs < s.maxhiggs then
+    s.higgs=s.higgs+2
+  end
+  if btn(4) and s.higgs > 0 then
     s.vel = s.vel + s.dir * s.sp * s.boost
-  elseif btn(6) then
+    s.higgs = s.higgs-10
+  elseif btn(6) and s.higgs > 0 then
     s.vel = s.vel + s.dir * s.sp
+    s.higgs = s.higgs-3
+  elseif btn(4) and btn(6) and s.higgs < 0 then
+    circ(240/2,136/2,10,2)
   end
   if btn(3) then
     s.dir = s.dir:rotate(s.rot_sp)
@@ -239,7 +260,7 @@ end
 
 function Starfield.draw(s, move)
  for i,star in ipairs(s.stars) do
-  circ(star.x,star.y,1,12)
+  circ(star.x,star.y,1,14)
   if move~=nil then
    local amount = -move
    if i%3==0 then amount = amount / 3

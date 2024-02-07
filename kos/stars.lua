@@ -23,7 +23,7 @@ end
 ---@param s Starfield
 function Starfield.draw(s, move)
  for i,star in ipairs(s.stars) do
-  circ(star.x,star.y,1,12)
+  circ(star.x,star.y,1,14)
   if move~=nil then
    local amount = -move
    if i%3==0 then amount = amount / 3
