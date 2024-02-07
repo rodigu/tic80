@@ -15,6 +15,11 @@ end
 
 ---@alias VecticOperation<OUT> fun(a:number|Vectic,b:number|Vectic):OUT
 ---@type VecticOperation<Vectic>
+function Vectic.__mod(a,b)
+	a,b=Vectic.twoVec(a,b)
+	return Vectic.new(a.x%b.x,a.y%b.y)
+end
+---@type VecticOperation<Vectic>
 function Vectic.__add(a,b)
 	a,b=Vectic.twoVec(a,b)
 	return Vectic.new(a.x+b.x,a.y+b.y)
@@ -107,4 +112,12 @@ function Vectic.apply(a,f) return Vectic.new(f(a.x),f(a.y)) end
 ---@type fun(minx:number,maxx:number,miny:number,maxy:number):Vectic
 function Vectic.rnd(minx,maxx,miny,maxy)
 	return Vectic.new(math.random(minx,maxx),math.random(miny,maxy))
+end
+---@type fun(a:Vectic,minx:number,maxx:number,miny:number,maxy:number)
+function Vectic.torus_constrain(a,minx,maxx,miny,maxy)
+	if a.x < minx then a.x = maxx
+	elseif a.x > maxx then a.x = minx end
+
+	if a.y < miny then a.y = maxy
+	elseif a.y > maxy then a.y = miny end
 end
