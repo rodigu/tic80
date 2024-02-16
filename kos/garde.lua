@@ -12,6 +12,7 @@
 ---@field boost number
 ---@field higgs number
 ---@field maxhiggs number
+---@field crit_higgs number
 local Garde={}
 Garde.__index = Garde
 
@@ -19,7 +20,7 @@ Garde.__index = Garde
 function Garde.new(x,y)
   local g = {
     pos=Vectic.new(x,y),
-    vel=Vectic.new(.01),
+    vel=Vectic.new(100),
     dir=Vectic.new(1),
     sp=0.1,
     boost=8,
@@ -27,7 +28,8 @@ function Garde.new(x,y)
     path=LinkedList.new(Vectic.new(x,y)),
     track_path=false,
     maxhiggs=1000,
-    higgs=1000
+    higgs=1000,
+    crit_higgs=0
   }
   setmetatable(g, Garde)
   return g
@@ -69,39 +71,53 @@ function Garde.draw(s, pos)
   s:UI()
 end
 
----@type fun(pos:Vectic,curr:number,max:number,size:Vectic,col:number)
-function ProgressBar(pos,curr,max,size,col)
+---@type fun(pos:Vectic,curr:number,max:number,size:Vectic,col:number,bck_col?:number)
+function ProgressBar(pos,curr,max,size,col,bck_col)
+  if bck_col==nil then bck_col=12 end
   if col==nil then col=6 end
-  rect(pos.x-1,pos.y-1,size.y+2,size.x+2,12)
-  rect(pos.x,pos.y,size.y*curr/max,size.x,col)
+  -- rect(pos.x-1,pos.y-1,size.y+2,size.x+2,bck_col)
+  line(pos.x-1,pos.y-1,pos.x-1,size.y+2,bck_col)
+  rect(pos.x,pos.y,size.x*curr/max,size.y,col)
+  line(pos.x-1+size.x,pos.y-1,pos.x-1+size.x,size.y+2,bck_col)
 end
 
 ---@type fun(s:Garde)
 function Garde.UI(s)
-  ProgressBar(Vectic.new(2,2),s.higgs,s.maxhiggs,Vectic.new(5,30),7)
+  local bck = 10
+  if s.crit_higgs>0 then bck=2 end
+  ProgressBar(Vectic.new(25,2),s.higgs,s.maxhiggs,Vectic.new(30,5),bck,12)
+  print('HIGGS',0,2,12,true,1,true)
 end
 
 local F=0
 ---@type fun(s:Garde)
 function Garde.move(s)
   F=F+1
-  if s.higgs < s.maxhiggs then
-    s.higgs=s.higgs+2
+  local cooldown=200
+
+  if s.crit_higgs <= 0 then  
+    if btn(4) then
+      s.vel = s.vel + s.dir * s.sp * s.boost
+      s.higgs = s.higgs-10
+    elseif btn(6) then
+      s.vel = s.vel + s.dir * s.sp
+      s.higgs = s.higgs-5
+    end
   end
-  if btn(4) and s.higgs > 0 then
-    s.vel = s.vel + s.dir * s.sp * s.boost
-    s.higgs = s.higgs-10
-  elseif btn(6) and s.higgs > 0 then
-    s.vel = s.vel + s.dir * s.sp
-    s.higgs = s.higgs-3
-  elseif btn(4) and btn(6) and s.higgs < 0 then
-    circ(240/2,136/2,10,2)
-  end
+
   if btn(3) then
     s.dir = s.dir:rotate(s.rot_sp)
   end
   if btn(2) then
     s.dir = s.dir:rotate(-s.rot_sp)
+  end
+
+  if s.higgs < 0 then
+    s.crit_higgs = cooldown
+  end
+  s.crit_higgs = s.crit_higgs - 1
+  if s.higgs < s.maxhiggs then
+    s.higgs=s.higgs+2
   end
   s.pos = s.pos + s.vel
   if s.track_path and F%(30)==0 then

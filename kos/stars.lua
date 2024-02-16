@@ -25,9 +25,13 @@ function Starfield.draw(s, move)
  for i,star in ipairs(s.stars) do
   circ(star.x,star.y,1,14)
   if move~=nil then
-   local amount = -move
-   if i%3==0 then amount = amount / 3
-   elseif i%2==0 then amount = amount / 2 end
+   local amount = -move / 25
+   if i%3==0 then amount = -move / 15
+   elseif i%2==0 then amount = -move / 20
+   elseif i%5==0 then amount = -move / 4
+   elseif i%7==0 then amount = -move / 6 
+   elseif i%11==0 then amount=-move end
+
    star = star + amount
    if star.x < s.minsize.x then
     star.x = s.maxsize.x

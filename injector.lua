@@ -50,7 +50,10 @@ function InsertHeader(new, original)
   ConcatTable(new, header_lines)
 end
 
-function InsertInputs(new, input_names)
+function InsertInputs(new, input_names, input_type)
+  local folder=''
+  if input_type=='folder' then
+  end
   for _,input_name in ipairs(input_names) do
     local input_data = ReadFile(input_name..'.lua')
     ---@type string[]
@@ -79,7 +82,7 @@ function InsertCartData(new, original_data)
   ConcatTable(new, TableSlice(original_data, cart_data_loc))
 end
 
-function WriteFile(config_filename)
+function WriteFile(config_filename, read_type)
   local target, input = ReadConfig(config_filename)
   local input_names = SplitString(input, ',')
 
@@ -89,7 +92,7 @@ function WriteFile(config_filename)
 
   -- Injection
   InsertHeader(new_data, original_data)
-  InsertInputs(new_data, input_names)
+  InsertInputs(new_data, input_names, read_type)
   InsertCartData(new_data, original_data)
 
   local file = io.open(target..'.lua', 'w+')
@@ -100,9 +103,13 @@ function WriteFile(config_filename)
 end
 
 local config_filename = 'config'
+local read_type = 'file'
 if has_args then
   config_filename = arg[1]
   print('Using config file: '..config_filename)
+  if arg[2]~=nil then
+    read_type=arg[2]
+  end
 end
 
-WriteFile(config_filename)
+WriteFile(config_filename, read_type)
