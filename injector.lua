@@ -55,6 +55,7 @@ function InsertInputs(new, input_names, input_type)
   if input_type=='folder' then
   end
   for _,input_name in ipairs(input_names) do
+    print('--Injecting: '..input_name)
     local input_data = ReadFile(input_name..'.lua')
     ---@type string[]
     local no_comments_data = {}
@@ -69,11 +70,11 @@ function InsertInputs(new, input_names, input_type)
 end
 
 function InsertCartData(new, original_data)
-  local cart_data_id = '-- <TILES>'
+  local match_regex = "^\-\- <%u+>$"
   local cart_data_loc = 0
 
   for i,l in ipairs(original_data) do
-    if l:find(cart_data_id)~= nil then
+    if l:match(match_regex)~= nil then
       cart_data_loc = i
       break
     end
@@ -94,6 +95,8 @@ function WriteFile(config_filename, read_type)
   InsertHeader(new_data, original_data)
   InsertInputs(new_data, input_names, read_type)
   InsertCartData(new_data, original_data)
+
+  print('Cart lines: '..#new_data)
 
   local file = io.open(target..'.lua', 'w+')
 
