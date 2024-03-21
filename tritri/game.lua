@@ -9,10 +9,9 @@ p1=CreatePlayer('PLAYER 1', {
 p1.board[2][2]='l'
 
 m=CreateMenu({makeMB('1 PLAYER'),makeMB('2 PLAYERS'),makeMB('SHOP'),makeMB('OPTIONS')},20,20)
+Gochi.current=p1
 
 function TIC()
  cls(0)
  Gochi:run()
- p1:run()
- m:run()
 end

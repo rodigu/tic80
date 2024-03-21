@@ -16,41 +16,40 @@ end
 function CreateMenu(buttons,x,y)
  local btndelay=10
  local f=btndelay
- ---@param s Menu
- local drw=function(s)
+ local m={
+  buttons=buttons,
+  choice=0,
+ }
+ 
+ local drw=function()
   for i,b in ipairs(buttons) do
    local color=14
-   if s.choice+1==i then
+   if m.choice+1==i then
     color=12
     spr(511,x-10,y+i*16+2,0)
    end
    CPrint(b.txt,x,y+i*16,2,color,true)
   end
  end
- ---@param s Menu
- local ctrls=function(s)
+
+ local ctrls=function()
   if f<btndelay then
    return
   end
   if btn(0) then
    f=0
-   s.choice=(s.choice-1)
+   m.choice=(m.choice-1)
   end
   if btn(1) then
    f=0
-   s.choice=(s.choice+1)
+   m.choice=(m.choice+1)
   end
-  s.choice=s.choice%(#s.buttons)
+  m.choice=m.choice%(#m.buttons)
  end
- ---@type Menu
- local m={
-  buttons=buttons,
-  choice=0,
-  run=function(s)
+ m.run=function(_)
    f=f+1
-   ctrls(s)
-   drw(s)
-  end
- }
+   ctrls()
+   drw()
+ end
  return m
 end

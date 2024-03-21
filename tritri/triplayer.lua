@@ -108,11 +108,19 @@ end
   end
  end
 
- ---@param s TriPlayer
+ ---@param pos Vectic
+ tp.outBounds=function(pos)
+  local x,y=false,false
+  if tp.board[x]==nil then x=true end
+  if tp.board[1][y]==nil then y=true end
+  return x,y
+ end
+
+ ---@param s Gochi
  tp.run=function(s)
-  s:drawBorder()
-  s:drawInfo()
-  s:drawBoard()
+  tp:drawBorder()
+  tp:drawInfo()
+  tp:drawBoard()
  end
  return tp
 end

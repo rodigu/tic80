@@ -254,42 +254,41 @@ end
 function CreateMenu(buttons,x,y)
  local btndelay=10
  local f=btndelay
- ---@param s Menu
- local drw=function(s)
+ local m={
+  buttons=buttons,
+  choice=0,
+ }
+ 
+ local drw=function()
   for i,b in ipairs(buttons) do
    local color=14
-   if s.choice+1==i then
+   if m.choice+1==i then
     color=12
     spr(511,x-10,y+i*16+2,0)
    end
    CPrint(b.txt,x,y+i*16,2,color,true)
   end
  end
- ---@param s Menu
- local ctrls=function(s)
+
+ local ctrls=function()
   if f<btndelay then
    return
   end
   if btn(0) then
    f=0
-   s.choice=(s.choice-1)
+   m.choice=(m.choice-1)
   end
   if btn(1) then
    f=0
-   s.choice=(s.choice+1)
+   m.choice=(m.choice+1)
   end
-  s.choice=s.choice%(#s.buttons)
+  m.choice=m.choice%(#m.buttons)
  end
- ---@type Menu
- local m={
-  buttons=buttons,
-  choice=0,
-  run=function(s)
+ m.run=function(_)
    f=f+1
-   ctrls(s)
-   drw(s)
-  end
- }
+   ctrls()
+   drw()
+ end
  return m
 end
 ---@class Gochi
@@ -361,8 +360,8 @@ end
 Trimino={}
 
 ---@class TriPiece
----@field str string[]
----@field type 'l'|'i'
+---@field blocks Vectic[]
+---@field type 'i'|'l'
 
 ---@param piece TriPiece
 Trimino._ri=function(piece)
@@ -373,26 +372,37 @@ Trimino._ri=function(piece)
 end
 
 ---@param piece TriPiece
+---@return Vectic[]
 Trimino._rl=function(piece)
-  local hole=indexOf(piece.str,'0')
-  local newhole=(indexOf(piece.str,'0')+1)%(1+#piece.str)
-  local newstr={}
-  for i,_ in ipairs(piece.str) do
-   if newhole==i then newstr[i]='0'
-   else newstr[i]='l' end
-  end
-  return newstr
+ local min,max=Trimino.bounds(piece.blocks)
+ local bs=piece.blocks
+ ---@param p Vectic
+ local function n(b)
+  if b==min then return Vectic.new(max.x,min.y) end
+  if b.y==min.y then return max end
+  if b.x==max.x then return Vectic.new(min.x,max.y) end
+  return min
+ end
+
+ return {n(bs[1]),n(bs[2]),n(bs[3])}
+end
+
+---@param blocks Vectic[]
+Trimino.bounds=function(blocks)
+ local max=Vectic.new(math.max(blocks[1].x,blocks[2].x,blocks[3].x),math.max(blocks[1].y,blocks[2].y,blocks[3].y))
+ local min=Vectic.new(math.min(blocks[1].x,blocks[2].x,blocks[3].x),math.max(blocks[1].y,blocks[2].y,blocks[3].y))
+ return min,max
 end
 
 ---@param piece TriPiece
 Trimino.rotate=function(piece)
- local rotstr={}
+ local rotvs={}
  if piece.type=='l' then
-  rotstr=Trimino._rl(piece)
+  rotvs=Trimino._rl(piece)
  else
-  rotstr=Trimino._ri(piece)
+  rotvs=Trimino._ri(piece)
  end
- piece.str=rotstr
+ piece.blocks=rotvs
 end
 
 ---@param pos Vectic
@@ -511,11 +521,19 @@ end
   end
  end
 
- ---@param s TriPlayer
+ ---@param pos Vectic
+ tp.outBounds=function(pos)
+  local x,y=false,false
+  if tp.board[x]==nil then x=true end
+  if tp.board[1][y]==nil then y=true end
+  return x,y
+ end
+
+ ---@param s Gochi
  tp.run=function(s)
-  s:drawBorder()
-  s:drawInfo()
-  s:drawBoard()
+  tp:drawBorder()
+  tp:drawInfo()
+  tp:drawBoard()
  end
  return tp
 end
@@ -530,12 +548,11 @@ p1=CreatePlayer('PLAYER 1', {
 p1.board[2][2]='l'
 
 m=CreateMenu({makeMB('1 PLAYER'),makeMB('2 PLAYERS'),makeMB('SHOP'),makeMB('OPTIONS')},20,20)
+Gochi.current=p1
 
 function TIC()
  cls(0)
  Gochi:run()
- p1:run()
- m:run()
 end
 -- <TILES>
 -- 000:0000000000000000000ccccc00c000cc00c0c0cc00c000cc00cccc0000cccc00
@@ -578,4 +595,3 @@ end
 -- <PALETTE>
 -- 000:1a1c2c5d275db13e53ef7d57ffcd75a7f07038b76425717929366f3b5dc941a6f673eff7f4f4f494b0c2566c86333c57
 -- </PALETTE>
-

@@ -2,8 +2,8 @@
 Trimino={}
 
 ---@class TriPiece
----@field str string[]
----@field type 'l'|'i'
+---@field blocks Vectic[]
+---@field type 'i'|'l'
 
 ---@param piece TriPiece
 Trimino._ri=function(piece)
@@ -14,26 +14,37 @@ Trimino._ri=function(piece)
 end
 
 ---@param piece TriPiece
+---@return Vectic[]
 Trimino._rl=function(piece)
-  local hole=indexOf(piece.str,'0')
-  local newhole=(indexOf(piece.str,'0')+1)%(1+#piece.str)
-  local newstr={}
-  for i,_ in ipairs(piece.str) do
-   if newhole==i then newstr[i]='0'
-   else newstr[i]='l' end
-  end
-  return newstr
+ local min,max=Trimino.bounds(piece.blocks)
+ local bs=piece.blocks
+ ---@param p Vectic
+ local function n(b)
+  if b==min then return Vectic.new(max.x,min.y) end
+  if b.y==min.y then return max end
+  if b.x==max.x then return Vectic.new(min.x,max.y) end
+  return min
+ end
+
+ return {n(bs[1]),n(bs[2]),n(bs[3])}
+end
+
+---@param blocks Vectic[]
+Trimino.bounds=function(blocks)
+ local max=Vectic.new(math.max(blocks[1].x,blocks[2].x,blocks[3].x),math.max(blocks[1].y,blocks[2].y,blocks[3].y))
+ local min=Vectic.new(math.min(blocks[1].x,blocks[2].x,blocks[3].x),math.max(blocks[1].y,blocks[2].y,blocks[3].y))
+ return min,max
 end
 
 ---@param piece TriPiece
 Trimino.rotate=function(piece)
- local rotstr={}
+ local rotvs={}
  if piece.type=='l' then
-  rotstr=Trimino._rl(piece)
+  rotvs=Trimino._rl(piece)
  else
-  rotstr=Trimino._ri(piece)
+  rotvs=Trimino._ri(piece)
  end
- piece.str=rotstr
+ piece.blocks=rotvs
 end
 
 ---@param pos Vectic
