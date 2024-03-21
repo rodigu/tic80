@@ -20,8 +20,9 @@ function indexOf(array, value)
  return nil
 end
 
-function CPrint(txt,x,y,scale,color)
+function CPrint(txt,x,y,scale,color,notcenter)
  local w=print(txt,WID,HEI,color,true,scale,true)
+ if notcenter then w=0 end
  print(txt,x-w/2,y,color,true,scale,true)
 end
 
@@ -234,6 +235,62 @@ function Vectic.limit_constraint(a, minx, maxx, miny, maxy)
 
   a.y = math.min(a.y, maxy)
   a.y = math.max(a.y, miny)
+end
+---@class MenuButton
+---@field onSelect fun()
+---@field txt string
+
+---@class Menu
+---@field buttons MenuButton[]
+---@field choice integer
+---@field run fun(s:Menu)
+
+---@type fun(txt:string,onSelect:fun()):MenuButton
+function makeMB(txt,onSelect)
+ return {txt=txt,onSelect=onSelect}
+end
+
+---@type fun(buttons:MenuButton[],x:number,y:number):Menu
+function CreateMenu(buttons,x,y)
+ local btndelay=10
+ local f=btndelay
+ ---@param s Menu
+ local drw=function(s)
+  for i,b in ipairs(buttons) do
+   local color=14
+   if s.choice+1==i then
+    color=12
+    spr(511,x-10,y+i*16+2,0)
+   end
+   CPrint(b.txt,x,y+i*16,2,color,true)
+  end
+ end
+ ---@param s Menu
+ local ctrls=function(s)
+  if f<btndelay then
+   return
+  end
+  if btn(0) then
+   f=0
+   s.choice=(s.choice-1)
+  end
+  if btn(1) then
+   f=0
+   s.choice=(s.choice+1)
+  end
+  s.choice=s.choice%(#s.buttons)
+ end
+ ---@type Menu
+ local m={
+  buttons=buttons,
+  choice=0,
+  run=function(s)
+   f=f+1
+   ctrls(s)
+   drw(s)
+  end
+ }
+ return m
 end
 ---@class Gochi
 Gochi={}
@@ -472,10 +529,13 @@ p1=CreatePlayer('PLAYER 1', {
 
 p1.board[2][2]='l'
 
+m=CreateMenu({makeMB('1 PLAYER'),makeMB('2 PLAYERS'),makeMB('SHOP'),makeMB('OPTIONS')},20,20)
+
 function TIC()
  cls(0)
  Gochi:run()
  p1:run()
+ m:run()
 end
 -- <TILES>
 -- 000:0000000000000000000ccccc00c000cc00c0c0cc00c000cc00cccc0000cccc00
@@ -498,6 +558,7 @@ end
 -- 002:c00000c00ccccc000ccccc000cc0cc000ccccc000ccccc00c00000c000000000
 -- 003:00ccc0000c000c00c00000c0c00000c0c00000c00c000c0000ccc00000000000
 -- 004:00ccc0000c000c00c0ccc0c0c0ccc0c0c0ccc0c00c000c0000ccc00000000000
+-- 255:cc0000000ccc000000cccc00000ccccc000ccccc00cccc000ccc0000cc000000
 -- </SPRITES>
 
 -- <WAVES>
@@ -517,3 +578,4 @@ end
 -- <PALETTE>
 -- 000:1a1c2c5d275db13e53ef7d57ffcd75a7f07038b76425717929366f3b5dc941a6f673eff7f4f4f494b0c2566c86333c57
 -- </PALETTE>
+
