@@ -20,7 +20,7 @@ function CreateMenu(buttons,x,y)
   buttons=buttons,
   choice=0,
  }
- 
+
  local drw=function()
   for i,b in ipairs(buttons) do
    local color=14
