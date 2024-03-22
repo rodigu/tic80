@@ -258,7 +258,7 @@ function CreateMenu(buttons,x,y)
   buttons=buttons,
   choice=0,
  }
- 
+
  local drw=function()
   for i,b in ipairs(buttons) do
    local color=14
@@ -363,11 +363,59 @@ Trimino={}
 ---@field blocks Vectic[]
 ---@field type 'i'|'l'
 
+---@return TriPiece
+Trimino.create=function()
+ local piecest={'i','l'}
+ local t=piecest[math.random(2)]
+ 
+ if t=='l' then
+  return {
+   blocks={Vectic.new(4,1),Vectic.new(5,1),Vectic.new(4,2)},
+   type='l'
+  }
+ end
+ return {
+  blocks={Vectic.new(4,1),Vectic.new(5,1),Vectic.new(3,1)},
+  type='i'
+ }
+end
+
+---@type fun(bs:Vectic[]):Vectic[]
+Trimino.bottom=function(bs)
+ local r={}
+ local _,max=Trimino.bounds(bs)
+
+ for _,b in ipairs(bs) do
+  if b.y==max.y then table.insert(r,b) end
+ end
+
+ return r
+end
+
 ---@param piece TriPiece
 Trimino._ri=function(piece)
- if piece[2]=='1' then
-  return splitStr('0 0 0 i i i 0 0 0')
- else return splitStr('0 i 0 0 i 0 0 i 0')
+ local min,max=Trimino.bounds(piece.blocks)
+ ---@param vs Vectic[]
+ local function mid(vs)
+  for _,v in ipairs(vs) do
+   --prone to error if lua is doing mem compare
+   if v~=min and v~=max then return v end
+  end
+ end
+ local m=mid(piece.blocks)
+ if min.x==max.x then
+  return {m,Vectic.new(m.x-1,m.y),Vectic.new(m.x+1,m.y)}
+ else
+  return {m,Vectic.new(m.x,m.y-1),Vectic.new(m.x,m.y+1)}
+ end
+end
+
+---@param piece TriPiece
+---@param ax 'x'|'y'
+---@param mod integer
+Trimino.move=function(piece,ax,mod)
+ for _,b in ipairs(piece.blocks) do
+  b[ax]=b[ax]+mod
  end
 end
 
@@ -376,7 +424,7 @@ end
 Trimino._rl=function(piece)
  local min,max=Trimino.bounds(piece.blocks)
  local bs=piece.blocks
- ---@param p Vectic
+ ---@param b Vectic
  local function n(b)
   if b==min then return Vectic.new(max.x,min.y) end
   if b.y==min.y then return max end
@@ -390,7 +438,7 @@ end
 ---@param blocks Vectic[]
 Trimino.bounds=function(blocks)
  local max=Vectic.new(math.max(blocks[1].x,blocks[2].x,blocks[3].x),math.max(blocks[1].y,blocks[2].y,blocks[3].y))
- local min=Vectic.new(math.min(blocks[1].x,blocks[2].x,blocks[3].x),math.max(blocks[1].y,blocks[2].y,blocks[3].y))
+ local min=Vectic.new(math.min(blocks[1].x,blocks[2].x,blocks[3].x),math.min(blocks[1].y,blocks[2].y,blocks[3].y))
  return min,max
 end
 
@@ -421,7 +469,7 @@ end
 
 ---@alias Border Block
 
----@type fun(id:string,blocks:BlockList,border:Border):TriPlayer
+---@type fun(id:integer,blocks:BlockList,border:Border):TriPlayer
 function CreatePlayer(id,blocks,border)
  ---@class TriPlayer
  tp={
@@ -431,9 +479,16 @@ function CreatePlayer(id,blocks,border)
   lines=0,
   block=blocks,
   border=border,
-  board={}
+  board={},
+  speed=60
  }
+
+ local bpdelay=10
+ local bpcount=0
  
+ ---@type integer speed frame counter
+ local spcount=0
+
  local function _createBoard(w,h)
  local b={}
  for x=1,w do
@@ -443,11 +498,13 @@ function CreatePlayer(id,blocks,border)
   end
  end
  return b
-end
+ end
 
  tp.wid=7
  tp.hei=12
  tp.board=_createBoard(tp.wid,tp.hei)
+ ---@type TriPiece
+ tp.tri=Trimino.create()
 
  ---@param s TriPlayer
  ---@param x number
@@ -503,49 +560,138 @@ end
  ---@param s TriPlayer
  tp.drawInfo=function(s)
   local x,y=s.pos.x+(s.wid+2.5)*4,(s.hei+2)*8
-  CPrint(s.id,x,y,1,12)
+  CPrint('PLAYER '..s.id,x,y,1,12)
   CPrint('SCORE: '..s.score,x,y+7,1,12)
   CPrint('LINES: '..s.lines,x,y+14,1,12)
  end
 
  ---@param s TriPlayer
  tp.drawBoard=function(s)
+  for _,p in ipairs(s.tri.blocks) do
+   Trimino.draw(p.x*8,p.y*8,s.block[s.tri.type].id,s.block[s.tri.type].color)
+  end
+
   for x,t in ipairs(s.board) do
    for y,c in ipairs(t) do
     if c=='i' then
-     Trimino.draw(x*8,y*8,s.block.i.id,s.block.i.color)
+     Trimino.draw(x*8,y*8,s.block.i.id,s.border.color)
     elseif c=='l' then
-     Trimino.draw(x*8,y*8,s.block.l.id,s.block.l.color)
+     Trimino.draw(x*8,y*8,s.block.l.id,s.border.color)
     end
    end
   end
  end
 
  ---@param pos Vectic
- tp.outBounds=function(pos)
+ local function isPosOut(pos)
   local x,y=false,false
-  if tp.board[x]==nil then x=true end
-  if tp.board[1][y]==nil then y=true end
+  if tp.board[pos.x]==nil then x=true end
+  if tp.board[1][pos.y]==nil then y=true end
   return x,y
+ end
+
+ ---@param blocks Vectic[]
+ local function isBlockOut(blocks)
+  for _,v in ipairs(blocks) do
+   local x,y=isPosOut(v)
+   if x or y then return true end
+  end
+  return false
+ end
+
+ ---@param blocks Vectic[]
+ local function isLegal(blocks)
+  for _,v in ipairs(blocks) do
+   if tp.board[v.x]~=nil and tp.board[v.x][v.y]~='0' then
+    return false
+   end
+  end
+  return true
+ end
+
+ local function pCtrl()
+  local cmod=(tp.id-1)*8
+  if btn(cmod+1) then
+   bpcount=0
+   Trimino.move(tp.tri,'y',1)
+  end
+  if btn(cmod+2) then
+   bpcount=0
+   Trimino.move(tp.tri,'x',-1)
+  end
+  if btn(cmod+3) then
+   bpcount=0
+   Trimino.move(tp.tri,'x',1)
+  end
+  if btn(cmod+4) then
+   bpcount=0
+   Trimino.rotate(tp.tri)
+  end
+ end
+
+ ---@param b Vectic[]
+ local function clone(b)
+  local r={}
+  for i,v in ipairs(b) do
+   r[i]=v:copy()
+  end
+  return r
+ end
+
+ ---@return boolean
+ local function atBottom()
+  local bBlocks=Trimino.bottom(tp.tri.blocks)
+  if bBlocks[1].y>tp.hei or not isLegal(bBlocks) then
+   return true
+  end
+  return false
+ end
+ 
+ local function lock()
+  for _,b in ipairs(tp.tri.blocks) do
+   tp.board[b.x][b.y]=tp.tri.type
+  end
+ end
+
+ ---@param s TriPlayer
+ tp.moveTri=function(s)
+  local prev=clone(tp.tri.blocks)
+  if spcount>s.speed then
+   spcount=0
+   Trimino.move(tp.tri,'y',1)
+  end
+  if bpcount>bpdelay then
+   pCtrl()
+  end
+  if isBlockOut(tp.tri.blocks) or not isLegal(tp.tri.blocks) then
+   if atBottom() then
+    tp.tri.blocks=prev
+    lock()
+    tp.tri=Trimino.create()
+   else
+    tp.tri.blocks=prev
+   end
+  end
  end
 
  ---@param s Gochi
  tp.run=function(s)
+  spcount=spcount+1
+  bpcount=bpcount+1
+  tp:moveTri()
   tp:drawBorder()
   tp:drawInfo()
   tp:drawBoard()
  end
  return tp
 end
-p1=CreatePlayer('PLAYER 1', {
+p1=CreatePlayer(1, {
  l={color=3,id=256},
  i={color=2,id=256}
 },{
  color=9,
  id=0
 })
-
-p1.board[2][2]='l'
 
 m=CreateMenu({makeMB('1 PLAYER'),makeMB('2 PLAYERS'),makeMB('SHOP'),makeMB('OPTIONS')},20,20)
 Gochi.current=p1
