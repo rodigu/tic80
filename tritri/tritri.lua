@@ -638,10 +638,21 @@ function CreatePlayer(id,blocks,border)
   return r
  end
 
+ ---@param p Vectic[]
+ local function canGoDown(p)
+  for _,b in ipairs(p) do
+   if tp.board[b.x]~=nil and (tp.board[b.x][b.y+1]=='l' or tp.board[b.x][b.y+1]=='i') then
+    return false
+   end
+  end
+  return true
+ end
+
+ ---@param p Vectic[]
  ---@return boolean
- local function atBottom()
-  local bBlocks=Trimino.bottom(tp.tri.blocks)
-  if bBlocks[1].y>tp.hei or not isLegal(bBlocks) then
+ local function atBottom(p)
+  local bBlocks=(tp.tri.blocks)
+  if bBlocks[1].y>=tp.hei or not canGoDown(p) then
    return true
   end
   return false
@@ -650,6 +661,49 @@ function CreatePlayer(id,blocks,border)
  local function lock()
   for _,b in ipairs(tp.tri.blocks) do
    tp.board[b.x][b.y]=tp.tri.type
+  end
+ end
+
+ local function lineFull(y)
+  for x=1,tp.wid do
+   if tp.board[x][y]=='0' then return false end
+  end
+  return true
+ end
+
+ local function clearLine(y)
+  for x=1,tp.wid do
+   tp.board[x][y]='0'
+  end
+ end
+
+ local function scanLines()
+  local cleared={}
+  for y=1,tp.hei do
+   if lineFull(y) then
+    table.insert(cleared,y)
+   end
+  end
+  if #cleared>0 then
+   local oc=tp.border.color
+   local fs=4
+   Gochi:add('line_clear',30,
+   function()
+    if fs%5==0 then 
+     if tp.border.color==oc then
+      tp.border.color=oc-1
+     else
+      tp.border.color=oc
+     end
+    end
+    fs=fs+1
+   end,
+   function()
+    tp.border.color=oc
+    for _,y in ipairs(cleared) do
+     clearLine(y)
+    end
+   end)
   end
  end
 
@@ -664,9 +718,10 @@ function CreatePlayer(id,blocks,border)
    pCtrl()
   end
   if isBlockOut(tp.tri.blocks) or not isLegal(tp.tri.blocks) then
-   if atBottom() then
+   if atBottom(prev) then
     tp.tri.blocks=prev
     lock()
+    scanLines()
     tp.tri=Trimino.create()
    else
     tp.tri.blocks=prev
@@ -687,7 +742,7 @@ function CreatePlayer(id,blocks,border)
 end
 p1=CreatePlayer(1, {
  l={color=3,id=256},
- i={color=2,id=256}
+ i={color=2,id=257}
 },{
  color=9,
  id=0

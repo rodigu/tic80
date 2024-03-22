@@ -1,6 +1,6 @@
 p1=CreatePlayer(1, {
  l={color=3,id=256},
- i={color=2,id=256}
+ i={color=2,id=257}
 },{
  color=9,
  id=0
