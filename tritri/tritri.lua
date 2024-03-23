@@ -36,6 +36,14 @@ function splitStr (inputstr, sep)
  end
  return t
 end
+
+---@type fun(pos:Vectic,curr:number,max:number,size:Vectic,col:number,bck_col?:number)
+function ProgressBar(pos,curr,max,size,col,bck_col)
+  if bck_col==nil then bck_col=12 end
+  if col==nil then col=6 end
+  rect(pos.x-1,pos.y-1,size.x+2,size.y+2,bck_col)
+  rect(pos.x,pos.y,size.x*curr/max,size.y,col)
+end
 ---@class Somchi
 Somchi = {}
 
@@ -375,7 +383,7 @@ Trimino.create=function()
   }
  end
  return {
-  blocks={Vectic.new(4,1),Vectic.new(5,1),Vectic.new(3,1)},
+  blocks={Vectic.new(4,2),Vectic.new(5,2),Vectic.new(3,2)},
   type='i'
  }
 end
@@ -484,7 +492,31 @@ function CreatePlayer(id,blocks,border)
  }
 
  local bpdelay=10
+ local downdelay=5
+ local downcount=0
  local bpcount=0
+ local canslam=true
+ local CLEAR='clear-lines-sfx'
+ local BlAME='slam-block-sfx'
+ local combo={
+  timer=0,
+  timeto=60*6,
+  count=1
+ }
+
+ local function comboTimeTo()
+  return combo.timeto-(combo.count-1)*30
+ end
+
+ local function updateCombo()
+  if combo.timer<=0 then
+   combo.count=1
+  else
+   combo.timer=combo.timer-1
+  end
+ end
+ Somchi.add(0,CLEAR,20,30)
+ Somchi.add(0,BlAME,5,10)
  
  ---@type integer speed frame counter
  local spcount=0
@@ -559,10 +591,14 @@ function CreatePlayer(id,blocks,border)
 
  ---@param s TriPlayer
  tp.drawInfo=function(s)
-  local x,y=s.pos.x+(s.wid+2.5)*4,(s.hei+2)*8
-  CPrint('PLAYER '..s.id,x,y,1,12)
-  CPrint('SCORE: '..s.score,x,y+7,1,12)
-  CPrint('LINES: '..s.lines,x,y+14,1,12)
+  --+(s.wid+2.5)*4
+  local x,y=s.pos.x+2,(s.hei+2)*8
+  CPrint('PLAYER '..s.id,x,y,1,12,true)
+  CPrint('SCORE: '..s.score,x,y+7,1,12,true)
+  CPrint('LINES: '..s.lines,x,y+14,1,12,true)
+  ProgressBar(Vectic.new(x+47,y),combo.timer,comboTimeTo(),Vectic.new(20,5),6,14)
+  -- CPrint(combo.timer,x+8*s.wid,y,1,12,true)
+  CPrint(combo.count,x+8*s.wid,y+7,1,12,true)
  end
 
  ---@param s TriPlayer
@@ -611,10 +647,22 @@ function CreatePlayer(id,blocks,border)
 
  local function pCtrl()
   local cmod=(tp.id-1)*8
-  if btn(cmod+1) then
-   bpcount=0
+  if btnp(cmod+4) then
+   Trimino.rotate(tp.tri)
+  end
+  if not btn(cmod) then
+   canslam=true
+  end
+  if canslam and btn(cmod) then
    Trimino.move(tp.tri,'y',1)
   end
+  if downdelay<downcount then
+   if btn(cmod+1) then
+    downcount=0
+    Trimino.move(tp.tri,'y',1)
+   end
+  end
+  if bpcount<bpdelay then return end
   if btn(cmod+2) then
    bpcount=0
    Trimino.move(tp.tri,'x',-1)
@@ -622,10 +670,6 @@ function CreatePlayer(id,blocks,border)
   if btn(cmod+3) then
    bpcount=0
    Trimino.move(tp.tri,'x',1)
-  end
-  if btn(cmod+4) then
-   bpcount=0
-   Trimino.rotate(tp.tri)
   end
  end
 
@@ -677,6 +721,37 @@ function CreatePlayer(id,blocks,border)
   end
  end
 
+ local function fallBlock(x,y)
+  if tp.board[x][y]=='0' or tp.board[x][y]==nil then
+   return
+  end
+  local ch=tp.board[x][y]
+  tp.board[x][y]='0'
+  while tp.board[x][y+1]~='l' and tp.board[x][y+1]~='i' and tp.board[x][y+1]~=nil do
+   y=y+1
+  end
+  tp.board[x][y]=ch
+ end
+
+ local function fallBlocks()
+  for x=1,tp.wid do
+   for y=tp.hei,1,-1 do
+    fallBlock(x,y)
+   end
+  end
+ end
+
+ ---@param lines integer
+ local function calcScore(lines)
+  return lines*10*combo.count
+ end
+
+ ---@param lines integer
+ local function addScore(lines)
+  tp.lines=tp.lines+lines
+  tp.score=calcScore(lines)
+ end
+
  local function scanLines()
   local cleared={}
   for y=1,tp.hei do
@@ -687,8 +762,15 @@ function CreatePlayer(id,blocks,border)
   if #cleared>0 then
    local oc=tp.border.color
    local fs=4
+   local playsfx=true
    Gochi:add('line_clear',30,
    function()
+    if playsfx then
+     Somchi.play(CLEAR,0,20+5*#cleared)
+     playsfx=false
+     combo.count=combo.count+#cleared
+     combo.timer=comboTimeTo()
+    end
     if fs%5==0 then 
      if tp.border.color==oc then
       tp.border.color=oc-1
@@ -702,6 +784,8 @@ function CreatePlayer(id,blocks,border)
     tp.border.color=oc
     for _,y in ipairs(cleared) do
      clearLine(y)
+     fallBlocks()
+     addScore(#cleared)
     end
    end)
   end
@@ -714,15 +798,18 @@ function CreatePlayer(id,blocks,border)
    spcount=0
    Trimino.move(tp.tri,'y',1)
   end
-  if bpcount>bpdelay then
-   pCtrl()
-  end
+
+  scanLines()
+
+  pCtrl()
+  
   if isBlockOut(tp.tri.blocks) or not isLegal(tp.tri.blocks) then
    if atBottom(prev) then
     tp.tri.blocks=prev
     lock()
-    scanLines()
+    Somchi.play(BlAME,2)
     tp.tri=Trimino.create()
+    canslam=false
    else
     tp.tri.blocks=prev
    end
@@ -733,10 +820,12 @@ function CreatePlayer(id,blocks,border)
  tp.run=function(s)
   spcount=spcount+1
   bpcount=bpcount+1
+  downcount=downcount+1
   tp:moveTri()
   tp:drawBorder()
   tp:drawInfo()
   tp:drawBoard()
+  updateCombo()
  end
  return tp
 end
@@ -786,7 +875,8 @@ end
 -- </WAVES>
 
 -- <SFX>
--- 000:000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000304000000000
+-- 000:801680248021803f804e8049805980598059806a806a807b807c808c808c808d809c809c80ad80ae80bf80c080c180c280c380d480d480d580d680e7300000000000
+-- 001:80708070807080708060805080308020f000f000f000f000f000f000f000f000f000f000f000f000f000f000f000f000f000f000f000f000f000f000100000000000
 -- </SFX>
 
 -- <TRACKS>
