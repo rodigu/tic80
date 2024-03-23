@@ -17,7 +17,7 @@ Trimino.create=function()
   }
  end
  return {
-  blocks={Vectic.new(4,1),Vectic.new(5,1),Vectic.new(3,1)},
+  blocks={Vectic.new(4,2),Vectic.new(5,2),Vectic.new(3,2)},
   type='i'
  }
 end
