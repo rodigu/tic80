@@ -29,3 +29,11 @@ function splitStr (inputstr, sep)
  end
  return t
 end
+
+---@type fun(pos:Vectic,curr:number,max:number,size:Vectic,col:number,bck_col?:number)
+function ProgressBar(pos,curr,max,size,col,bck_col)
+  if bck_col==nil then bck_col=12 end
+  if col==nil then col=6 end
+  rect(pos.x-1,pos.y-1,size.x+2,size.y+2,bck_col)
+  rect(pos.x,pos.y,size.x*curr/max,size.y,col)
+end
