@@ -11,7 +11,7 @@
 ---@type fun(id:integer,blocks:BlockList,border:Border):TriPlayer
 function CreatePlayer(id,blocks,border)
  ---@class TriPlayer
- tp={
+ local tp={
   pos=Vectic.new(0,0),
   id=id,
   score=0,
@@ -178,6 +178,7 @@ function CreatePlayer(id,blocks,border)
 
  local function pCtrl()
   local cmod=(tp.id-1)*8
+  local ismovingdown=false
   if btnp(cmod+4) then
    Trimino.rotate(tp.tri)
   end
@@ -186,11 +187,13 @@ function CreatePlayer(id,blocks,border)
   end
   if canslam and btn(cmod) then
    Trimino.move(tp.tri,'y',1)
+   ismovingdown=true
   end
   if downdelay<downcount then
    if btn(cmod+1) then
     downcount=0
     Trimino.move(tp.tri,'y',1)
+    ismovingdown=true
    end
   end
   if bpcount<bpdelay then return end
@@ -202,6 +205,7 @@ function CreatePlayer(id,blocks,border)
    bpcount=0
    Trimino.move(tp.tri,'x',1)
   end
+  return ismovingdown
  end
 
  ---@param b Vectic[]
@@ -274,7 +278,7 @@ function CreatePlayer(id,blocks,border)
 
  ---@param lines integer
  local function calcScore(lines)
-  return lines*10*combo.count
+  return lines*combo.count
  end
 
  ---@param lines integer
@@ -325,14 +329,13 @@ function CreatePlayer(id,blocks,border)
  ---@param s TriPlayer
  tp.moveTri=function(s)
   local prev=clone(tp.tri.blocks)
-  if spcount>s.speed then
-   spcount=0
-   Trimino.move(tp.tri,'y',1)
-  end
 
   scanLines()
 
-  pCtrl()
+  if not pCtrl() and spcount>s.speed-s.lines then
+   spcount=0
+   Trimino.move(tp.tri,'y',1)
+  end
 
   if isBlockOut(tp.tri.blocks) or not isLegal(tp.tri.blocks) then
    if atBottom(prev) then
@@ -340,6 +343,7 @@ function CreatePlayer(id,blocks,border)
     local min,max=Trimino.bounds(prev)
     lock()
     Somchi.play(BlAME,2)
+    Gochi:shake(tp.id,tp.pos,10,1)
     Gochi.particles.sparks(
      Vectic.new(s.pos.x+8*min.x+(8*max.x-8*min.x)/2,s.pos.y+8*max.y),
      20,

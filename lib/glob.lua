@@ -16,7 +16,7 @@ end
 function CPrint(txt,x,y,scale,color,notcenter)
  local w=print(txt,WID,HEI,color,true,scale,true)
  if notcenter then w=0 end
- print(txt,x-w/2,y,color,true,scale,true)
+ return print(txt,x-w/2,y,color,true,scale,true)
 end
 
 function splitStr (inputstr, sep)

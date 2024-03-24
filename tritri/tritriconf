@@ -1,2 +1,2 @@
 target:tritri/tritri
-in:lib/glob,lib/somchi,lib/vectic,lib/menu,lib/gochi,lib/parchi,tritri/trimino,tritri/triplayer,tritri/game
+in:lib/glob,lib/somchi,lib/vectic,lib/gochi,lib/menu,lib/parchi,tritri/trimino,tritri/triplayer,tritri/pgen,tritri/score,tritri/menu,tritri/game

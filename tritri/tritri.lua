@@ -23,7 +23,7 @@ end
 function CPrint(txt,x,y,scale,color,notcenter)
  local w=print(txt,WID,HEI,color,true,scale,true)
  if notcenter then w=0 end
- print(txt,x-w/2,y,color,true,scale,true)
+ return print(txt,x-w/2,y,color,true,scale,true)
 end
 
 function splitStr (inputstr, sep)
@@ -244,61 +244,6 @@ function Vectic.limit_constraint(a, minx, maxx, miny, maxy)
   a.y = math.min(a.y, maxy)
   a.y = math.max(a.y, miny)
 end
----@class MenuButton
----@field onSelect fun()
----@field txt string
-
----@class Menu
----@field buttons MenuButton[]
----@field choice integer
----@field run fun(s:Menu)
-
----@type fun(txt:string,onSelect:fun()):MenuButton
-function makeMB(txt,onSelect)
- return {txt=txt,onSelect=onSelect}
-end
-
----@type fun(buttons:MenuButton[],x:number,y:number):Menu
-function CreateMenu(buttons,x,y)
- local btndelay=10
- local f=btndelay
- local m={
-  buttons=buttons,
-  choice=0,
- }
-
- local drw=function()
-  for i,b in ipairs(buttons) do
-   local color=14
-   if m.choice+1==i then
-    color=12
-    spr(511,x-10,y+i*16+2,0)
-   end
-   CPrint(b.txt,x,y+i*16,2,color,true)
-  end
- end
-
- local ctrls=function()
-  if f<btndelay then
-   return
-  end
-  if btn(0) then
-   f=0
-   m.choice=(m.choice-1)
-  end
-  if btn(1) then
-   f=0
-   m.choice=(m.choice+1)
-  end
-  m.choice=m.choice%(#m.buttons)
- end
- m.run=function(_)
-   f=f+1
-   ctrls()
-   drw()
- end
- return m
-end
 ---@class Gochi
 Gochi={}
 
@@ -314,6 +259,8 @@ Gochi={}
 ---@type {[string]: Caller}
 Gochi.calls={}
 
+Gochi.void=function()end
+
 ---@param s Gochi
 ---@param name string
 Gochi.has=function(s,name)
@@ -324,6 +271,33 @@ end
 ---@param name string
 Gochi.del=function(s,name)
  s.calls[name]=nil
+end
+---@alias StateGen fun():GameState
+---@type fun(stategen:StateGen,t?:integer)
+Gochi.trans=function(stategen,t)
+ local t=t or 30
+ local p=Vectic.new()
+ local s=Vectic.new(0,HEI)
+ local increment=2*WID/(t)
+ local stage=1
+ local hasGen=false
+ Gochi:add('trans-default',t,
+  function ()
+   rect(p.x,p.y,s.x,s.y,12)
+   if s.x>=WID then
+    stage=2
+   end
+   if stage==1 then
+    s.x=s.x+increment
+   else
+    if not hasGen then
+     hasGen=true
+     Gochi.current=stategen()
+    end
+    p.x=p.x+increment
+   end
+  end,
+  Gochi.void)
 end
 
 ---@param s Gochi
@@ -364,6 +338,94 @@ Gochi.run=function(s)
   c:run()
  end
 end
+
+---@param s Gochi
+---@param name string
+---@param vec any
+---@param t integer Shake duration
+---@param i number Shake intensity
+Gochi.shake=function(s,name,vec,t,i)
+ local ox,oy=vec:xy()
+ s:add(name..'_shake',t,function()
+  vec.x=math.random(ox-i,ox+i)
+  vec.y=math.random(oy-i,oy+i)
+ end,
+ function()
+  vec.x=ox
+  vec.y=oy
+ end)
+end
+local menu={}
+
+---@class MenuButton
+---@field onSelect fun(s:MenuButton)
+---@field txt string
+---@field type string
+
+---@class Menu
+---@field buttons MenuButton[]
+---@field choice integer
+---@field run fun(s:Menu)
+
+menu.PUSH='push'
+menu.SELECT='select'
+menu.TOGGLE='toggle'
+
+---@type fun(txt:string,onSelect:fun(s:MenuButton),btype:'push'|'select'|'toggle'):MenuButton
+function menu.makeButton(txt,onSelect,btype)
+ return {txt=txt,onSelect=onSelect,type=btype}
+end
+
+---@type fun(buttons:MenuButton[],x:number,y:number):Menu
+function menu.create(buttons,x,y)
+ local btndelay=10
+ local f=btndelay
+ local m={
+  buttons=buttons,
+  choice=0,
+ }
+ local bscale=1
+
+ local drw=function()
+  for i,b in ipairs(buttons) do
+   local color=14
+   local btxt=b.txt
+   if b.type==Gochi.menu.SELECT then
+    btxt='< '..btxt..' >'
+   end
+   if m.choice+1==i then
+    color=12
+    local wid=CPrint(btxt,WID,HEI,bscale,color,true)
+    line(x,y+i*bscale*8+bscale*8*.8,x+wid-2,y+i*bscale*8+bscale*8*.8,12)
+    b:onSelect()
+   end
+   CPrint(btxt,x,y+i*bscale*8,bscale,color,true)
+  end
+ end
+
+ local ctrls=function()
+  if f<btndelay then
+   return
+  end
+  if btn(0) then
+   f=0
+   m.choice=(m.choice-1)
+  end
+  if btn(1) then
+   f=0
+   m.choice=(m.choice+1)
+  end
+  m.choice=m.choice%(#m.buttons)
+ end
+ m.run=function(_)
+   f=f+1
+   ctrls()
+   drw()
+ end
+ return m
+end
+
+Gochi.menu=menu
 local p={}
 
 p.counter=0
@@ -513,7 +575,7 @@ end
 ---@type fun(id:integer,blocks:BlockList,border:Border):TriPlayer
 function CreatePlayer(id,blocks,border)
  ---@class TriPlayer
- tp={
+ local tp={
   pos=Vectic.new(0,0),
   id=id,
   score=0,
@@ -680,6 +742,7 @@ function CreatePlayer(id,blocks,border)
 
  local function pCtrl()
   local cmod=(tp.id-1)*8
+  local ismovingdown=false
   if btnp(cmod+4) then
    Trimino.rotate(tp.tri)
   end
@@ -688,11 +751,13 @@ function CreatePlayer(id,blocks,border)
   end
   if canslam and btn(cmod) then
    Trimino.move(tp.tri,'y',1)
+   ismovingdown=true
   end
   if downdelay<downcount then
    if btn(cmod+1) then
     downcount=0
     Trimino.move(tp.tri,'y',1)
+    ismovingdown=true
    end
   end
   if bpcount<bpdelay then return end
@@ -704,6 +769,7 @@ function CreatePlayer(id,blocks,border)
    bpcount=0
    Trimino.move(tp.tri,'x',1)
   end
+  return ismovingdown
  end
 
  ---@param b Vectic[]
@@ -776,7 +842,7 @@ function CreatePlayer(id,blocks,border)
 
  ---@param lines integer
  local function calcScore(lines)
-  return lines*10*combo.count
+  return lines*combo.count
  end
 
  ---@param lines integer
@@ -827,14 +893,13 @@ function CreatePlayer(id,blocks,border)
  ---@param s TriPlayer
  tp.moveTri=function(s)
   local prev=clone(tp.tri.blocks)
-  if spcount>s.speed then
-   spcount=0
-   Trimino.move(tp.tri,'y',1)
-  end
 
   scanLines()
 
-  pCtrl()
+  if not pCtrl() and spcount>s.speed-s.lines then
+   spcount=0
+   Trimino.move(tp.tri,'y',1)
+  end
 
   if isBlockOut(tp.tri.blocks) or not isLegal(tp.tri.blocks) then
    if atBottom(prev) then
@@ -842,6 +907,7 @@ function CreatePlayer(id,blocks,border)
     local min,max=Trimino.bounds(prev)
     lock()
     Somchi.play(BlAME,2)
+    Gochi:shake(tp.id,tp.pos,10,1)
     Gochi.particles.sparks(
      Vectic.new(s.pos.x+8*min.x+(8*max.x-8*min.x)/2,s.pos.y+8*max.y),
      20,
@@ -887,17 +953,95 @@ function CreatePlayer(id,blocks,border)
  end
  return tp
 end
-p1=CreatePlayer(1, {
- l={color=3,id=256},
- i={color=2,id=257}
-},{
- color=14,
- id=0
-})
-
-p1.pos.x=(WID-p1.wid*8)/2-8
-m=CreateMenu({makeMB('1 PLAYER'),makeMB('2 PLAYERS'),makeMB('SHOP'),makeMB('OPTIONS')},20,20)
-Gochi.current=p1
+---@type fun(p:string):StateGen
+function pgen(p)
+ ---@type TriPlayer[]
+ local ps={}
+ local pcount=tonumber(p:sub(1,1))
+ for i=1,pcount do
+  ps[i]=CreatePlayer(i, {
+   l={color=3,id=256},
+   i={color=2,id=257}
+  },{
+   color=14,
+   id=0
+  })
+  ps[i].pos.x=(i-1)*WID/pcount--+(ps[i].wid+2)*4
+  if pcount==1 then
+   ps[1].pos.x=WID/2-(ps[1].wid+2)*4
+  end
+ end
+ ---@type StateGen
+ local gf=function ()
+  return {run=function (gc)
+   local gameover=true
+   for i=1,pcount do
+    ps[i].run(gc)
+    gameover=gameover and ps[i].hasLost()
+   end
+   if gameover then
+    Gochi.current=scoreScreenGen(ps)
+   end
+  end}
+ end
+ return gf
+end
+---@param players TriPlayer[]
+---@return GameState
+function scoreScreenGen(players)
+ local frms=60
+ local iscores={}
+ local high=0
+ for i=1,#players do
+  if high<players[i].score then
+   high=players[i].score
+  end
+  iscores[i]=0
+ end
+ return {
+  run=function(gc)
+   for i,p in ipairs(players) do
+    local x=p.pos.x+4*(p.wid+2)
+    local y=HEI*.4
+    local ptadd=p.score/frms
+    local w=CPrint('P'..i,x,y,1,p.border.color)
+    if high==iscores[i] then
+     spr(272,x-4,y-12)
+    end
+    if iscores[i]<p.score then
+     iscores[i]=iscores[i]+ptadd
+    else
+     iscores[i]=p.score
+    end
+    CPrint(math.floor(iscores[i]),x,y+10,1,p.border.color)
+   end
+   if btn(4) then
+    Gochi.current=menugen()
+   end
+  end
+ }
+end
+---@type StateGen
+function menugen()
+ ---@param s MenuButton
+ local function pselect(s)
+  local pcount=tonumber(s.txt:sub(1,1))
+  if btnp(2) then
+   s.txt=(math.floor(s.txt:sub(1,1))-1)..'P'
+  end
+  if btnp(3) then
+   s.txt=(math.floor(s.txt:sub(1,1))+1)..'P'
+  end
+  if btnp(4) then
+   Gochi.trans(pgen(s.txt))
+  end
+ end
+ return Gochi.menu.create({
+  Gochi.menu.makeButton('1P',pselect,Gochi.menu.SELECT),
+  Gochi.menu.makeButton('SHOP',Gochi.void),
+  Gochi.menu.makeButton('OPTIONS',Gochi.void)},20,20)
+end
+Gochi.current=menugen()
 
 function TIC()
  cls(0)
@@ -924,6 +1068,7 @@ end
 -- 002:c00000c00ccccc000ccccc000cc0cc000ccccc000ccccc00c00000c000000000
 -- 003:00ccc0000c000c00c00000c0c00000c0c00000c00c000c0000ccc00000000000
 -- 004:00ccc0000c000c00c0ccc0c0c0ccc0c0c0ccc0c00c000c0000ccc00000000000
+-- 016:000000000c0c0c00c4c4c4c0c44444c0c44444c0c44444c0ccccccc000000000
 -- 255:cc0000000ccc000000cccc00000ccccc000ccccc00cccc000ccc0000cc000000
 -- </SPRITES>
 
@@ -934,8 +1079,8 @@ end
 -- </WAVES>
 
 -- <SFX>
--- 000:801680248021803f804e8049805980598059806a806a807b807c808c808c808d809c809c80ad80ae80bf80c080c180c280c380d480d480d580d680e7300000000000
--- 001:80708070807080708060805080308020f000f000f000f000f000f000f000f000f000f000f000f000f000f000f000f000f000f000f000f000f000f000100000000000
+-- 000:201620242021203f204e2049205920592059206a206a207b207c208c208c208d209c209c20ad20ae20bf20c020c120c220c320d420d420d520d620e7300000000000
+-- 001:20702070207030703060405050305020f000f000f000f000f000f000f000f000f000f000f000f000f000f000f000f000f000f000f000f000f000f000100000000000
 -- </SFX>
 
 -- <TRACKS>

@@ -13,6 +13,8 @@ Gochi={}
 ---@type {[string]: Caller}
 Gochi.calls={}
 
+Gochi.void=function()end
+
 ---@param s Gochi
 ---@param name string
 Gochi.has=function(s,name)
@@ -23,6 +25,33 @@ end
 ---@param name string
 Gochi.del=function(s,name)
  s.calls[name]=nil
+end
+---@alias StateGen fun():GameState
+---@type fun(stategen:StateGen,t?:integer)
+Gochi.trans=function(stategen,t)
+ local t=t or 30
+ local p=Vectic.new()
+ local s=Vectic.new(0,HEI)
+ local increment=2*WID/(t)
+ local stage=1
+ local hasGen=false
+ Gochi:add('trans-default',t,
+  function ()
+   rect(p.x,p.y,s.x,s.y,12)
+   if s.x>=WID then
+    stage=2
+   end
+   if stage==1 then
+    s.x=s.x+increment
+   else
+    if not hasGen then
+     hasGen=true
+     Gochi.current=stategen()
+    end
+    p.x=p.x+increment
+   end
+  end,
+  Gochi.void)
 end
 
 ---@param s Gochi
@@ -62,4 +91,21 @@ Gochi.run=function(s)
  for _,c in pairs(s.calls) do
   c:run()
  end
+end
+
+---@param s Gochi
+---@param name string
+---@param vec any
+---@param t integer Shake duration
+---@param i number Shake intensity
+Gochi.shake=function(s,name,vec,t,i)
+ local ox,oy=vec:xy()
+ s:add(name..'_shake',t,function()
+  vec.x=math.random(ox-i,ox+i)
+  vec.y=math.random(oy-i,oy+i)
+ end,
+ function()
+  vec.x=ox
+  vec.y=oy
+ end)
 end
