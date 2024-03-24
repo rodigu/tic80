@@ -354,16 +354,34 @@ function CreatePlayer(id,blocks,border)
   end
  end
 
+ ---@return boolean
+ tp.hasLost=function()
+  ---@type Vectic[]
+  local strt={Vectic.new(4,1),Vectic.new(5,1),Vectic.new(4,2),Vectic.new(5,2),Vectic.new(3,2)}
+  for _,v in ipairs(strt) do
+   if tp.board[v.x][v.y]~='0' then
+    return true
+   end
+  end
+  return false
+ end
+
  ---@param s Gochi
  tp.run=function(s)
   spcount=spcount+1
   bpcount=bpcount+1
   downcount=downcount+1
-  tp:moveTri()
   tp:drawBorder()
   tp:drawInfo()
   tp:drawBoard()
   updateCombo()
+  if not tp.hasLost() then
+   tp:moveTri()
+  else
+   if spcount%60<30 then
+    CPrint('GAME OVER',tp.pos.x+tp.wid*4+8,tp.pos.y+tp.hei*4+8,1,2)
+   end
+  end
  end
  return tp
 end
