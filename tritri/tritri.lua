@@ -591,17 +591,17 @@ function CreatePlayer(id,blocks,border)
  tp.sides=function(s)
   for x=8,(s.wid)*8,8 do
    if x>8 then
-    line(x-1,s.pos.y+8,x-1,s.hei*8+7,0)
+    line(s.pos.x+x-1,s.pos.y+8,s.pos.x+x-1,s.hei*8+7,0)
    end
-   s:bSection(x,s.pos.y,0,false)
-   s:bSection(x,s.pos.y+(s.hei+1)*8,0,false,0)
+   s:bSection(s.pos.x+x,s.pos.y,0,false)
+   s:bSection(s.pos.x+x,s.pos.y+(s.hei+1)*8,0,false,0)
   end
   for y=8,(s.hei)*8,8 do
    if y>8 then
-    line(s.pos.x+8,y-1,s.wid*8+7,y-1,0)
+    line(s.pos.x+8,s.pos.y+y-1,s.pos.x+s.wid*8+7,s.pos.y+y-1,0)
    end
-   s:bSection(s.pos.x,y,0,false,1)
-   s:bSection(s.pos.x+(s.wid+1)*8,y,0,false,1)
+   s:bSection(s.pos.x,s.pos.y+y,0,false,1)
+   s:bSection(s.pos.x+(s.wid+1)*8,s.pos.y+y,0,false,1)
   end
  end
 
@@ -626,26 +626,26 @@ function CreatePlayer(id,blocks,border)
  tp.drawInfo=function(s)
   --+(s.wid+2.5)*4
   local x,y=s.pos.x+2,(s.hei+2)*8
-  CPrint('PLAYER '..s.id,x,y,1,12,true)
-  CPrint('SCORE: '..s.score,x,y+7,1,12,true)
-  CPrint('LINES: '..s.lines,x,y+14,1,12,true)
-  ProgressBar(Vectic.new(x+47,y),combo.timer,comboTimeTo(),Vectic.new(20,5),6,14)
-  -- CPrint(combo.timer,x+8*s.wid,y,1,12,true)
-  CPrint(combo.count,x+8*s.wid,y+7,1,12,true)
+  CPrint('PLAYER '..s.id,x,y,1,tp.border.color,true)
+  CPrint('SCORE: '..s.score,x,y+7,1,tp.border.color,true)
+  CPrint('LINES: '..s.lines,x,y+14,1,tp.border.color,true)
+  ProgressBar(Vectic.new(x+47,y),combo.timer,comboTimeTo(),Vectic.new(20,5),tp.border.color,15)
+  -- CPrint(combo.timer,x+8*s.wid,y,1,tp.border.color,true)
+  CPrint(combo.count,x+8*s.wid,y+7,1,tp.border.color,true)
  end
 
  ---@param s TriPlayer
  tp.drawBoard=function(s)
   for _,p in ipairs(s.tri.blocks) do
-   Trimino.draw(p.x*8,p.y*8,s.block[s.tri.type].id,s.block[s.tri.type].color)
+   Trimino.draw(s.pos.x+p.x*8,s.pos.y+p.y*8,s.block[s.tri.type].id,s.block[s.tri.type].color)
   end
 
   for x,t in ipairs(s.board) do
    for y,c in ipairs(t) do
     if c=='i' then
-     Trimino.draw(x*8,y*8,s.block.i.id,s.border.color)
+     Trimino.draw(s.pos.x+x*8,s.pos.y+y*8,s.block.i.id,s.border.color)
     elseif c=='l' then
-     Trimino.draw(x*8,y*8,s.block.l.id,s.border.color)
+     Trimino.draw(s.pos.x+x*8,s.pos.y+y*8,s.block.l.id,s.border.color)
     end
    end
   end
@@ -843,7 +843,7 @@ function CreatePlayer(id,blocks,border)
     lock()
     Somchi.play(BlAME,2)
     Gochi.particles.sparks(
-     Vectic.new(8*min.x+(8*max.x-8*min.x)/2,8*max.y),
+     Vectic.new(s.pos.x+8*min.x+(8*max.x-8*min.x)/2,s.pos.y+8*max.y),
      20,
      10,
      .5
@@ -856,16 +856,34 @@ function CreatePlayer(id,blocks,border)
   end
  end
 
+ ---@return boolean
+ tp.hasLost=function()
+  ---@type Vectic[]
+  local strt={Vectic.new(4,1),Vectic.new(5,1),Vectic.new(4,2),Vectic.new(5,2),Vectic.new(3,2)}
+  for _,v in ipairs(strt) do
+   if tp.board[v.x][v.y]~='0' then
+    return true
+   end
+  end
+  return false
+ end
+
  ---@param s Gochi
  tp.run=function(s)
   spcount=spcount+1
   bpcount=bpcount+1
   downcount=downcount+1
-  tp:moveTri()
   tp:drawBorder()
   tp:drawInfo()
   tp:drawBoard()
   updateCombo()
+  if not tp.hasLost() then
+   tp:moveTri()
+  else
+   if spcount%60<30 then
+    CPrint('GAME OVER',tp.pos.x+tp.wid*4+8,tp.pos.y+tp.hei*4+8,1,2)
+   end
+  end
  end
  return tp
 end
@@ -873,10 +891,11 @@ p1=CreatePlayer(1, {
  l={color=3,id=256},
  i={color=2,id=257}
 },{
- color=9,
+ color=14,
  id=0
 })
 
+p1.pos.x=(WID-p1.wid*8)/2-8
 m=CreateMenu({makeMB('1 PLAYER'),makeMB('2 PLAYERS'),makeMB('SHOP'),makeMB('OPTIONS')},20,20)
 Gochi.current=p1
 
