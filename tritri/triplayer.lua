@@ -89,17 +89,17 @@ function CreatePlayer(id,blocks,border)
  tp.sides=function(s)
   for x=8,(s.wid)*8,8 do
    if x>8 then
-    line(x-1,s.pos.y+8,x-1,s.hei*8+7,0)
+    line(s.pos.x+x-1,s.pos.y+8,s.pos.x+x-1,s.hei*8+7,0)
    end
-   s:bSection(x,s.pos.y,0,false)
-   s:bSection(x,s.pos.y+(s.hei+1)*8,0,false,0)
+   s:bSection(s.pos.x+x,s.pos.y,0,false)
+   s:bSection(s.pos.x+x,s.pos.y+(s.hei+1)*8,0,false,0)
   end
   for y=8,(s.hei)*8,8 do
    if y>8 then
-    line(s.pos.x+8,y-1,s.wid*8+7,y-1,0)
+    line(s.pos.x+8,s.pos.y+y-1,s.pos.x+s.wid*8+7,s.pos.y+y-1,0)
    end
-   s:bSection(s.pos.x,y,0,false,1)
-   s:bSection(s.pos.x+(s.wid+1)*8,y,0,false,1)
+   s:bSection(s.pos.x,s.pos.y+y,0,false,1)
+   s:bSection(s.pos.x+(s.wid+1)*8,s.pos.y+y,0,false,1)
   end
  end
 
@@ -135,15 +135,15 @@ function CreatePlayer(id,blocks,border)
  ---@param s TriPlayer
  tp.drawBoard=function(s)
   for _,p in ipairs(s.tri.blocks) do
-   Trimino.draw(p.x*8,p.y*8,s.block[s.tri.type].id,s.block[s.tri.type].color)
+   Trimino.draw(s.pos.x+p.x*8,s.pos.y+p.y*8,s.block[s.tri.type].id,s.block[s.tri.type].color)
   end
 
   for x,t in ipairs(s.board) do
    for y,c in ipairs(t) do
     if c=='i' then
-     Trimino.draw(x*8,y*8,s.block.i.id,s.border.color)
+     Trimino.draw(s.pos.x+x*8,s.pos.y+y*8,s.block.i.id,s.border.color)
     elseif c=='l' then
-     Trimino.draw(x*8,y*8,s.block.l.id,s.border.color)
+     Trimino.draw(s.pos.x+x*8,s.pos.y+y*8,s.block.l.id,s.border.color)
     end
    end
   end
@@ -341,7 +341,7 @@ function CreatePlayer(id,blocks,border)
     lock()
     Somchi.play(BlAME,2)
     Gochi.particles.sparks(
-     Vectic.new(8*min.x+(8*max.x-8*min.x)/2,8*max.y),
+     Vectic.new(s.pos.x+8*min.x+(8*max.x-8*min.x)/2,s.pos.y+8*max.y),
      20,
      10,
      .5
