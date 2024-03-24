@@ -359,11 +359,44 @@ Gochi.current = {run=function(gc)end}
 
 ---@param s Gochi
 Gochi.run=function(s)
+ Gochi.current.run(s)
  for _,c in pairs(s.calls) do
   c:run()
  end
- Gochi.current.run(s)
 end
+local p={}
+
+p.counter=0
+
+---@class Particle
+---@field pos Vectic
+---@field vel Vectic
+
+---@type fun(origin:Vectic,duration:integer,count?:integer,gravity?:integer)
+p.sparks=function(origin,duration,count,gravity)
+ gravity=gravity or 1
+ count=count or 10
+ ---@type Particle[]
+ local parts={}
+ for _=1,count do
+  table.insert(parts,{
+   pos=origin:copy(),
+   vel=origin.rnd(-3,3,-3,3)
+  })
+ end
+ Gochi:add('particles-sparks-'..p.counter,duration,
+ function()
+  for _,v in ipairs(parts) do
+   circ(v.pos.x,v.pos.y,math.random(1),math.random(2,4))
+   v.pos=v.pos+v.vel
+   v.vel.y=v.vel.y+gravity
+  end
+ end,
+ function()end)
+ p.counter=p.counter+1
+end
+
+Gochi.particles=p
 ---@class Trimino
 Trimino={}
 
@@ -749,7 +782,7 @@ function CreatePlayer(id,blocks,border)
  ---@param lines integer
  local function addScore(lines)
   tp.lines=tp.lines+lines
-  tp.score=calcScore(lines)
+  tp.score=tp.score+calcScore(lines)
  end
 
  local function scanLines()
@@ -802,12 +835,19 @@ function CreatePlayer(id,blocks,border)
   scanLines()
 
   pCtrl()
-  
+
   if isBlockOut(tp.tri.blocks) or not isLegal(tp.tri.blocks) then
    if atBottom(prev) then
     tp.tri.blocks=prev
+    local min,max=Trimino.bounds(prev)
     lock()
     Somchi.play(BlAME,2)
+    Gochi.particles.sparks(
+     Vectic.new(8*min.x+(8*max.x-8*min.x)/2,8*max.y),
+     20,
+     10,
+     .5
+    )
     tp.tri=Trimino.create()
     canslam=false
    else

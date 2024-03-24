@@ -280,7 +280,7 @@ function CreatePlayer(id,blocks,border)
  ---@param lines integer
  local function addScore(lines)
   tp.lines=tp.lines+lines
-  tp.score=calcScore(lines)
+  tp.score=tp.score+calcScore(lines)
  end
 
  local function scanLines()
@@ -333,12 +333,19 @@ function CreatePlayer(id,blocks,border)
   scanLines()
 
   pCtrl()
-  
+
   if isBlockOut(tp.tri.blocks) or not isLegal(tp.tri.blocks) then
    if atBottom(prev) then
     tp.tri.blocks=prev
+    local min,max=Trimino.bounds(prev)
     lock()
     Somchi.play(BlAME,2)
+    Gochi.particles.sparks(
+     Vectic.new(8*min.x+(8*max.x-8*min.x)/2,8*max.y),
+     20,
+     10,
+     .5
+    )
     tp.tri=Trimino.create()
     canslam=false
    else

@@ -58,8 +58,8 @@ Gochi.current = {run=function(gc)end}
 
 ---@param s Gochi
 Gochi.run=function(s)
+ Gochi.current.run(s)
  for _,c in pairs(s.calls) do
   c:run()
  end
- Gochi.current.run(s)
 end
