@@ -595,7 +595,7 @@ function CreatePlayer(id,blocks,border)
  local BlAME='slam-block-sfx'
  local combo={
   timer=0,
-  timeto=60*6,
+  timeto=60*10,
   count=1
  }
 
@@ -628,7 +628,7 @@ function CreatePlayer(id,blocks,border)
  end
 
  tp.wid=7
- tp.hei=12
+ tp.hei=13
  tp.board=_createBoard(tp.wid,tp.hei)
  ---@type TriPiece
  tp.tri=Trimino.create()
@@ -690,7 +690,7 @@ function CreatePlayer(id,blocks,border)
   local x,y=s.pos.x+2,(s.hei+2)*8
   CPrint('PLAYER '..s.id,x,y,1,tp.border.color,true)
   CPrint('SCORE: '..s.score,x,y+7,1,tp.border.color,true)
-  CPrint('LINES: '..s.lines,x,y+14,1,tp.border.color,true)
+  -- CPrint('LINES: '..s.lines,x,y+14,1,tp.border.color,true)
   ProgressBar(Vectic.new(x+47,y),combo.timer,comboTimeTo(),Vectic.new(20,5),tp.border.color,15)
   -- CPrint(combo.timer,x+8*s.wid,y,1,tp.border.color,true)
   CPrint(combo.count,x+8*s.wid,y+7,1,tp.border.color,true)
@@ -867,10 +867,12 @@ function CreatePlayer(id,blocks,border)
     if playsfx then
      Somchi.play(CLEAR,0,20+5*#cleared)
      playsfx=false
-     combo.count=combo.count+#cleared
+     combo.count=combo.count+math.ceil(#cleared*2)
      combo.timer=comboTimeTo()
     end
-    if fs%5==0 then 
+    CPrint(#cleared,tp.pos.x+(tp.wid+2)*4+1,tp.pos.y+21,2,0)
+    CPrint(#cleared,tp.pos.x+(tp.wid+2)*4,tp.pos.y+20,2,2)
+    if fs%10==0 then
      if tp.border.color==oc then
       tp.border.color=oc-1
      else
@@ -974,6 +976,7 @@ function pgen(p)
    id=0
   })
   ps[i].pos.x=(i-1)*WID/pcount--+(ps[i].wid+2)*4
+  ps[i].pos.y=-2
   if pcount==1 then
    ps[1].pos.x=WID/2-(ps[1].wid+2)*4
   end
