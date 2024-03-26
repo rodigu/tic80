@@ -64,7 +64,7 @@ function CreatePlayer(id,blocks,border)
  end
 
  tp.wid=7
- tp.hei=12
+ tp.hei=13
  tp.board=_createBoard(tp.wid,tp.hei)
  ---@type TriPiece
  tp.tri=Trimino.create()
