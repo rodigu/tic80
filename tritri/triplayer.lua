@@ -31,7 +31,7 @@ function CreatePlayer(id,blocks,border)
  local BlAME='slam-block-sfx'
  local combo={
   timer=0,
-  timeto=60*6,
+  timeto=60*10,
   count=1
  }
 
