@@ -303,7 +303,7 @@ function CreatePlayer(id,blocks,border)
     if playsfx then
      Somchi.play(CLEAR,0,20+5*#cleared)
      playsfx=false
-     combo.count=combo.count+#cleared
+     combo.count=combo.count+math.ceil(#cleared*2)
      combo.timer=comboTimeTo()
     end
     if fs%5==0 then 
