@@ -890,13 +890,17 @@ function CreatePlayer(id,blocks,border)
   end
  end
 
+ local blockFallSpeed=function()
+  return tp.speed-tp.lines/5
+ end
+
  ---@param s TriPlayer
  tp.moveTri=function(s)
   local prev=clone(tp.tri.blocks)
 
   scanLines()
 
-  if not pCtrl() and spcount>s.speed-s.lines then
+  if not pCtrl() and spcount>blockFallSpeed() then
    spcount=0
    Trimino.move(tp.tri,'y',1)
   end
@@ -915,6 +919,9 @@ function CreatePlayer(id,blocks,border)
      .5
     )
     tp.tri=Trimino.create()
+    spcount=0
+    bpcount=0
+    downcount=0
     canslam=false
    else
     tp.tri.blocks=prev
@@ -979,7 +986,7 @@ function pgen(p)
     ps[i].run(gc)
     gameover=gameover and ps[i].hasLost()
    end
-   if gameover then
+   if gameover and btnp(4) then
     Gochi.current=scoreScreenGen(ps)
    end
   end}
@@ -998,12 +1005,14 @@ function scoreScreenGen(players)
   end
   iscores[i]=0
  end
+ local ptadd=high/frms
  return {
   run=function(gc)
    for i,p in ipairs(players) do
     local x=p.pos.x+4*(p.wid+2)
-    local y=HEI*.4
-    local ptadd=p.score/frms
+    local y=HEI-(iscores[i]/(high+1))*HEI*.5
+    rect(x-5,y,10,HEI,6)
+    y=y-20
     local w=CPrint('P'..i,x,y,1,p.border.color)
     if high==iscores[i] then
      spr(272,x-4,y-12)
@@ -1015,7 +1024,7 @@ function scoreScreenGen(players)
     end
     CPrint(math.floor(iscores[i]),x,y+10,1,p.border.color)
    end
-   if btn(4) then
+   if btnp(4) then
     Gochi.current=menugen()
    end
   end

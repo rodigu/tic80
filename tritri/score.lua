@@ -10,12 +10,14 @@ function scoreScreenGen(players)
   end
   iscores[i]=0
  end
+ local ptadd=high/frms
  return {
   run=function(gc)
    for i,p in ipairs(players) do
     local x=p.pos.x+4*(p.wid+2)
-    local y=HEI*.4
-    local ptadd=p.score/frms
+    local y=HEI-(iscores[i]/(high+1))*HEI*.5
+    rect(x-5,y,10,HEI,6)
+    y=y-20
     local w=CPrint('P'..i,x,y,1,p.border.color)
     if high==iscores[i] then
      spr(272,x-4,y-12)
@@ -27,7 +29,7 @@ function scoreScreenGen(players)
     end
     CPrint(math.floor(iscores[i]),x,y+10,1,p.border.color)
    end
-   if btn(4) then
+   if btnp(4) then
     Gochi.current=menugen()
    end
   end

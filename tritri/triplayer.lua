@@ -326,13 +326,17 @@ function CreatePlayer(id,blocks,border)
   end
  end
 
+ local blockFallSpeed=function()
+  return tp.speed-tp.lines/5
+ end
+
  ---@param s TriPlayer
  tp.moveTri=function(s)
   local prev=clone(tp.tri.blocks)
 
   scanLines()
 
-  if not pCtrl() and spcount>s.speed-s.lines then
+  if not pCtrl() and spcount>blockFallSpeed() then
    spcount=0
    Trimino.move(tp.tri,'y',1)
   end
@@ -351,6 +355,9 @@ function CreatePlayer(id,blocks,border)
      .5
     )
     tp.tri=Trimino.create()
+    spcount=0
+    bpcount=0
+    downcount=0
     canslam=false
    else
     tp.tri.blocks=prev

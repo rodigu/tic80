@@ -24,7 +24,7 @@ function pgen(p)
     ps[i].run(gc)
     gameover=gameover and ps[i].hasLost()
    end
-   if gameover then
+   if gameover and btnp(4) then
     Gochi.current=scoreScreenGen(ps)
    end
   end}
