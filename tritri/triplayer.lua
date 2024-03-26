@@ -306,7 +306,9 @@ function CreatePlayer(id,blocks,border)
      combo.count=combo.count+math.ceil(#cleared*2)
      combo.timer=comboTimeTo()
     end
-    if fs%5==0 then 
+    CPrint(#cleared,tp.pos.x+(tp.wid+2)*4+1,tp.pos.y+21,2,0)
+    CPrint(#cleared,tp.pos.x+(tp.wid+2)*4,tp.pos.y+20,2,2)
+    if fs%10==0 then
      if tp.border.color==oc then
       tp.border.color=oc-1
      else
