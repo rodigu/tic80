@@ -126,7 +126,7 @@ function CreatePlayer(id,blocks,border)
   local x,y=s.pos.x+2,(s.hei+2)*8
   CPrint('PLAYER '..s.id,x,y,1,tp.border.color,true)
   CPrint('SCORE: '..s.score,x,y+7,1,tp.border.color,true)
-  CPrint('LINES: '..s.lines,x,y+14,1,tp.border.color,true)
+  -- CPrint('LINES: '..s.lines,x,y+14,1,tp.border.color,true)
   ProgressBar(Vectic.new(x+47,y),combo.timer,comboTimeTo(),Vectic.new(20,5),tp.border.color,15)
   -- CPrint(combo.timer,x+8*s.wid,y,1,tp.border.color,true)
   CPrint(combo.count,x+8*s.wid,y+7,1,tp.border.color,true)
