@@ -21,13 +21,14 @@ end
 
 ---@type fun(buttons:MenuButton[],x:number,y:number):Menu
 function menu.create(buttons,x,y)
- local btndelay=10
- local f=btndelay
  local m={
   buttons=buttons,
   choice=0,
  }
  local bscale=1
+ local MOVESOUND='menu-move'
+ Somchi.add(63,MOVESOUND,40,10)
+ Somchi.volume=14
 
  local drw=function()
   for i,b in ipairs(buttons) do
@@ -47,21 +48,17 @@ function menu.create(buttons,x,y)
  end
 
  local ctrls=function()
-  if f<btndelay then
-   return
-  end
-  if btn(0) then
-   f=0
+  if btnp(0) then
    m.choice=(m.choice-1)
+   Somchi.play(MOVESOUND,1)
   end
-  if btn(1) then
-   f=0
+  if btnp(1) then
    m.choice=(m.choice+1)
+   Somchi.play(MOVESOUND,1)
   end
   m.choice=m.choice%(#m.buttons)
  end
  m.run=function(_)
-   f=f+1
    ctrls()
    drw()
  end

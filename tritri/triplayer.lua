@@ -46,9 +46,9 @@ function CreatePlayer(id,blocks,border)
    combo.timer=combo.timer-1
   end
  end
- Somchi.add(0,CLEAR,20,30)
+ Somchi.add(0,CLEAR,25,30)
  Somchi.add(0,BlAME,5,10)
- 
+
  ---@type integer speed frame counter
  local spcount=0
 
@@ -278,7 +278,7 @@ function CreatePlayer(id,blocks,border)
 
  ---@param lines integer
  local function calcScore(lines)
-  return lines*combo.count
+  return lines*combo.count*10
  end
 
  ---@param lines integer
@@ -301,7 +301,7 @@ function CreatePlayer(id,blocks,border)
    Gochi:add('line_clear',30,
    function()
     if playsfx then
-     Somchi.play(CLEAR,0,20+5*#cleared)
+     Somchi.play(CLEAR,0,30+2*#cleared)
      playsfx=false
      combo.count=combo.count+math.ceil(#cleared*2)
      combo.timer=comboTimeTo()

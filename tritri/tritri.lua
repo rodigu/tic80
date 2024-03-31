@@ -378,13 +378,14 @@ end
 
 ---@type fun(buttons:MenuButton[],x:number,y:number):Menu
 function menu.create(buttons,x,y)
- local btndelay=10
- local f=btndelay
  local m={
   buttons=buttons,
   choice=0,
  }
  local bscale=1
+ local MOVESOUND='menu-move'
+ Somchi.add(63,MOVESOUND,40,10)
+ Somchi.volume=14
 
  local drw=function()
   for i,b in ipairs(buttons) do
@@ -404,21 +405,17 @@ function menu.create(buttons,x,y)
  end
 
  local ctrls=function()
-  if f<btndelay then
-   return
-  end
-  if btn(0) then
-   f=0
+  if btnp(0) then
    m.choice=(m.choice-1)
+   Somchi.play(MOVESOUND,1)
   end
-  if btn(1) then
-   f=0
+  if btnp(1) then
    m.choice=(m.choice+1)
+   Somchi.play(MOVESOUND,1)
   end
   m.choice=m.choice%(#m.buttons)
  end
  m.run=function(_)
-   f=f+1
    ctrls()
    drw()
  end
@@ -459,6 +456,68 @@ p.sparks=function(origin,duration,count,gravity)
 end
 
 Gochi.particles=p
+Strg={}
+
+Strg.BORDERS=6
+Strg.BLOCKS=5
+
+---@class PlayerStore
+---@field high integer
+---@field l Block
+---@field i Block
+---@field border Block
+
+---@param tp TriPlayer
+Strg.save=function (tp,high)
+ local ploc=(tp.id-1)*(7+Strg.BLOCKS+Strg.BORDERS)
+ pmem(ploc,high)
+ pmem(ploc+1,tp.block.l.id)
+ pmem(ploc+2,tp.block.l.color)
+ pmem(ploc+3,tp.block.i.id)
+ pmem(ploc+4,tp.block.i.color)
+ pmem(ploc+5,tp.border.id)
+ pmem(ploc+6,tp.border.color)
+end
+
+---@param p integer
+---@return PlayerStore
+Strg.load=function(p)
+ local ploc=(p-1)*(7+Strg.BLOCKS+Strg.BORDERS)
+ local s={
+  high=pmem(ploc),
+  l={id=pmem(ploc+1),color=pmem(ploc+2)},
+  i={id=pmem(ploc+3),color=pmem(ploc+4)},
+  border={id=pmem(ploc+5),color=pmem(ploc+6)}}
+ return s
+end
+
+---@param p integer Player number id
+---@param blck integer Block number (starts at 1)
+Strg.unlockBlock=function (p,blck)
+ local ploc=(p-1)*(7+blck)
+ pmem(ploc,1)
+end
+
+---@param p integer Player number id
+---@param blck integer Block number (starts at 1)
+Strg.hasBlock=function (p,blck)
+ local ploc=(p-1)*(7+blck)
+ pmem(ploc)
+end
+
+---@param p integer Player number id
+---@param brdr integer Border number (starts at 1)
+Strg.unlockBorder=function (p,brdr)
+ local ploc=(p-1)*(7+Strg.BLOCKS+brdr)
+ pmem(ploc,1)
+end
+
+---@param p integer Player number id
+---@param brdr integer Border number (starts at 1)
+Strg.hasBorder=function (p,brdr)
+ local ploc=(p-1)*(7+Strg.BLOCKS+brdr)
+ pmem(ploc)
+end
 ---@class Trimino
 Trimino={}
 
@@ -610,9 +669,9 @@ function CreatePlayer(id,blocks,border)
    combo.timer=combo.timer-1
   end
  end
- Somchi.add(0,CLEAR,20,30)
+ Somchi.add(0,CLEAR,25,30)
  Somchi.add(0,BlAME,5,10)
- 
+
  ---@type integer speed frame counter
  local spcount=0
 
@@ -842,7 +901,7 @@ function CreatePlayer(id,blocks,border)
 
  ---@param lines integer
  local function calcScore(lines)
-  return lines*combo.count
+  return lines*combo.count*10
  end
 
  ---@param lines integer
@@ -865,7 +924,7 @@ function CreatePlayer(id,blocks,border)
    Gochi:add('line_clear',30,
    function()
     if playsfx then
-     Somchi.play(CLEAR,0,20+5*#cleared)
+     Somchi.play(CLEAR,0,30+2*#cleared)
      playsfx=false
      combo.count=combo.count+math.ceil(#cleared*2)
      combo.timer=comboTimeTo()
@@ -999,15 +1058,23 @@ end
 ---@param players TriPlayer[]
 ---@return GameState
 function scoreScreenGen(players)
+ Somchi.add(3,'count-up-bip',40,3)
  local frms=60
  local iscores={}
  local high=0
+ ---@type PlayerStore[]
+ local highscores={}
  for i=1,#players do
+  highscores[i]=Strg.load(i).high
+  if highscores[i]<players[i].score then
+   Strg.save(players[i],players[i].score)
+  end
   if high<players[i].score then
    high=players[i].score
   end
   iscores[i]=0
  end
+
  local ptadd=high/frms
  return {
   run=function(gc)
@@ -1019,6 +1086,13 @@ function scoreScreenGen(players)
     local w=CPrint('P'..i,x,y,1,p.border.color)
     if high==iscores[i] then
      spr(272,x-4,y-12)
+     if ((math.floor(time())%1000)<500) and (highscores[i]<players[i].score) then
+      CPrint('NEW!', x+1, y-20,1,3)
+     end
+    else
+     if time()%60<30 then
+      Somchi.play('count-up-bip')
+     end
     end
     if iscores[i]<p.score then
      iscores[i]=iscores[i]+ptadd
@@ -1033,8 +1107,9 @@ function scoreScreenGen(players)
   end
  }
 end
----@type StateGen
 function menugen()
+  local TRANS='transition'
+  Somchi.add(2,TRANS,35,11)
  ---@param s MenuButton
  local function pselect(s)
   local pcount=tonumber(s.txt:sub(1,1))
@@ -1045,14 +1120,28 @@ function menugen()
    s.txt=(math.floor(s.txt:sub(1,1))+1)..'P'
   end
   if btnp(4) then
+   Somchi.play(TRANS)
    Gochi.trans(pgen(s.txt))
   end
  end
  return Gochi.menu.create({
   Gochi.menu.makeButton('1P',pselect,Gochi.menu.SELECT),
-  Gochi.menu.makeButton('SHOP',Gochi.void),
-  Gochi.menu.makeButton('OPTIONS',Gochi.void)},20,20)
+  Gochi.menu.makeButton('SHOP',Gochi.void,Gochi.menu.PUSH),
+  Gochi.menu.makeButton('OPTIONS',Gochi.void,Gochi.menu.PUSH)},20,20)
 end
+for i=1,4 do
+ local k=Strg.load(i)
+ if k==0 then
+  Strg.save(CreatePlayer(i, {
+   l={color=3,id=256},
+   i={color=2,id=257}
+  },{
+   color=14,
+   id=0
+  }),0)
+ end
+end
+
 Gochi.current=menugen()
 
 function TIC()
@@ -1088,11 +1177,16 @@ end
 -- 000:00000000ffffffff00000000ffffffff
 -- 001:0123456789abcdeffedcba9876543210
 -- 002:0123456789abcdef0123456789abcdef
+-- 003:ddd0b26bfff92075cef6c6205536cff3
 -- </WAVES>
 
 -- <SFX>
 -- 000:201620242021203f204e2049205920592059206a206a207b207c208c208c208d209c209c20ad20ae20bf20c020c120c220c320d420d420d520d620e7300000000000
 -- 001:20702070207030703060405050305020f000f000f000f000f000f000f000f000f000f000f000f000f000f000f000f000f000f000f000f000f000f000100000000000
+-- 002:00200020006000600080008000b000b000d000d000f000f0f0d0f0d0f0d0f0d0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0370000000000
+-- 003:00e000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000307000000300
+-- 062:83359353b38bc3aa93c273b6a375c330b34ba3a993e9b3e4b3a7a3279315b33bb36a93849367a3057313836fa39b8329b345d3a7d372d33ec34cb36c0000000f0f0f
+-- 063:00f000d000c000900070005000400010101020104010501060106010f000f000f000f000f000f000f000f000f000f000f000f000f000f000f000f000400000000000
 -- </SFX>
 
 -- <TRACKS>
