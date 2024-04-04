@@ -7,6 +7,7 @@ Gochi={}
 ---@class Caller
 ---@field name string
 ---@field t integer Time to kill
+---@field istop boolean If caller should be forced to top
 ---@field run fun(c: Caller) Function runs every frame
 ---@field kill fun() Function that runs right before death
 
@@ -58,10 +59,12 @@ end
 ---@param name string
 ---@param t integer
 ---@param run fun()
----@param kill fun()
+---@param kill? fun()
 ---@param delay? number
-Gochi.add=function(s,name,t,run,kill,delay)
+---@param forcetop? boolean
+Gochi.add=function(s,name,t,run,kill,delay,forcetop)
  delay=delay or 0
+ kill=kill or Gochi.void
  if s:has(name) then return end
  s.calls[name]={
   name=name,
@@ -88,7 +91,15 @@ Gochi.current = {run=function(gc)end}
 ---@param s Gochi
 Gochi.run=function(s)
  Gochi.current.run(s)
+ local tops={}
  for _,c in pairs(s.calls) do
+  if c.istop then
+    table.insert(tops,c)
+  else
+    c:run()
+  end
+ end
+ for _,c in ipairs(tops) do
   c:run()
  end
 end
