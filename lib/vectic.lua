@@ -136,7 +136,7 @@ function Vectic.apply(a, f) return Vectic.new(f(a.x), f(a.y)) end
 
 ---@type fun(minx:number,maxx:number,miny:number,maxy:number):Vectic
 function Vectic.rnd(minx, maxx, miny, maxy)
-  return Vectic.new(math.random(minx, maxx), math.random(miny, maxy))
+  return Vectic.new(math.random()*(maxx-minx)+minx, math.random()*(maxy-miny)+miny)
 end
 
 ---@type fun(a:Vectic,minx:number,maxx:number,miny:number,maxy:number)
