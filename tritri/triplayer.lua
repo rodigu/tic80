@@ -22,6 +22,7 @@ function CreatePlayer(id,blocks,border)
   speed=60
  }
 
+ local comborefresh=false
  local bpdelay=10
  local downdelay=5
  local downcount=0
@@ -129,7 +130,20 @@ function CreatePlayer(id,blocks,border)
   -- CPrint('LINES: '..s.lines,x,y+14,1,tp.border.color,true)
   ProgressBar(Vectic.new(x+47,y),combo.timer,comboTimeTo(),Vectic.new(20,5),tp.border.color,15)
   -- CPrint(combo.timer,x+8*s.wid,y,1,tp.border.color,true)
-  CPrint(combo.count,x+8*s.wid,y+7,1,tp.border.color,true)
+  if comborefresh then
+   comborefresh=false
+   Gochi.particles.remove(Gochi.particles.FIRE,s.id..'-combo')
+  end
+  if combo.count>1 then
+   Gochi.particles.fire(Vectic.new(x+8*s.wid,y+7),-1,5*combo.count,s.id..'-combo')
+   Gochi:add(s.id..'combo-count',-1,function ()
+    circ(x+8*s.wid+1,y+7+1,6,2)
+    circb(x+8*s.wid+1,y+7+1,6,12)
+    CPrint(combo.count,x+8*s.wid,y+7,1,12,true)
+   end,Gochi.void,0,true)
+  else
+   Gochi.particles.remove(Gochi.particles.FIRE,s.id..'-combo')
+  end
  end
 
  ---@param s TriPlayer
@@ -304,6 +318,7 @@ function CreatePlayer(id,blocks,border)
      Somchi.play(CLEAR,0,30+2*#cleared)
      playsfx=false
      combo.count=combo.count+math.ceil(#cleared*2)
+     comborefresh=true
      combo.timer=comboTimeTo()
     end
     CPrint(#cleared,tp.pos.x+(tp.wid+2)*4+1,tp.pos.y+21,2,0)
