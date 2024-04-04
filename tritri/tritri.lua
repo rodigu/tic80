@@ -327,7 +327,8 @@ Gochi.add=function(s,name,t,run,kill,delay,forcetop)
   kill=function()
    kill()
    s:del(name)
-  end
+  end,
+  istop=forcetop
  }
 end
 
@@ -497,7 +498,7 @@ p.sparks=function(origin,duration,count,gravity,unique)
  for _=1,count do
   table.insert(parts,{
    pos=origin:copy(),
-   vel=origin.rnd(-3,-1,-3,-1)
+   vel=origin.rnd(-2,2,-4,-1)
   })
  end
  Gochi:add(p.SPARKS..unique,duration,
@@ -783,11 +784,12 @@ function CreatePlayer(id,blocks,border)
    Gochi.particles.remove(Gochi.particles.FIRE,s.id..'-combo')
   end
   if combo.count>1 then
-   Gochi.particles.fire(Vectic.new(x+8*s.wid,y+7),-1,5*combo.count,s.id..'-combo')
+   x=x-1
+   Gochi.particles.fire(Vectic.new(x+8*s.wid+1,y+7),-1,5*combo.count,s.id..'-combo')
    Gochi:add(s.id..'combo-count',-1,function ()
-    circ(x+8*s.wid+1,y+7+1,6,2)
-    circb(x+8*s.wid+1,y+7+1,6,12)
-    CPrint(combo.count,x+8*s.wid,y+7,1,12,true)
+    circ(x+8*s.wid+1,y+7+1,4,2)
+    -- circb(x+8*s.wid+1,y+7+1,6,12)
+    CPrint(combo.count,x+8*s.wid,y+6,1,12,true)
    end,Gochi.void,0,true)
   else
    Gochi.particles.remove(Gochi.particles.FIRE,s.id..'-combo')
