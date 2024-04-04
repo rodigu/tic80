@@ -61,10 +61,10 @@ p.sparks=function(origin,duration,count,gravity,unique)
  for _=1,count do
   table.insert(parts,{
    pos=origin:copy(),
-   vel=origin.rnd(-3,3,-3,3)
+   vel=origin.rnd(-3,-1,-3,-1)
   })
  end
- Gochi:add('particles-sparks-'..p.counter,duration,
+ Gochi:add(p.SPARKS..unique,duration,
  function()
   for _,v in ipairs(parts) do
    circ(v.pos.x,v.pos.y,math.random(1),math.random(2,4))
@@ -72,8 +72,7 @@ p.sparks=function(origin,duration,count,gravity,unique)
    v.vel.y=v.vel.y+gravity
   end
  end,
- function()end)
- p.counter=p.counter+1
+ Gochi.void)
 end
 
 Gochi.particles=p
