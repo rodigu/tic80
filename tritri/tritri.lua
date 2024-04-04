@@ -218,7 +218,7 @@ function Vectic.apply(a, f) return Vectic.new(f(a.x), f(a.y)) end
 
 ---@type fun(minx:number,maxx:number,miny:number,maxy:number):Vectic
 function Vectic.rnd(minx, maxx, miny, maxy)
-  return Vectic.new(math.random(minx, maxx), math.random(miny, maxy))
+  return Vectic.new(math.random()*(maxx-minx)+minx, math.random()*(maxy-miny)+miny)
 end
 
 ---@type fun(a:Vectic,minx:number,maxx:number,miny:number,maxy:number)
@@ -253,6 +253,7 @@ Gochi={}
 ---@class Caller
 ---@field name string
 ---@field t integer Time to kill
+---@field istop boolean If caller should be forced to top
 ---@field run fun(c: Caller) Function runs every frame
 ---@field kill fun() Function that runs right before death
 
@@ -304,10 +305,12 @@ end
 ---@param name string
 ---@param t integer
 ---@param run fun()
----@param kill fun()
+---@param kill? fun()
 ---@param delay? number
-Gochi.add=function(s,name,t,run,kill,delay)
+---@param forcetop? boolean
+Gochi.add=function(s,name,t,run,kill,delay,forcetop)
  delay=delay or 0
+ kill=kill or Gochi.void
  if s:has(name) then return end
  s.calls[name]={
   name=name,
@@ -334,7 +337,15 @@ Gochi.current = {run=function(gc)end}
 ---@param s Gochi
 Gochi.run=function(s)
  Gochi.current.run(s)
+ local tops={}
  for _,c in pairs(s.calls) do
+  if c.istop then
+    table.insert(tops,c)
+  else
+    c:run()
+  end
+ end
+ for _,c in ipairs(tops) do
   c:run()
  end
 end
@@ -431,8 +442,54 @@ p.counter=0
 ---@field pos Vectic
 ---@field vel Vectic
 
----@type fun(origin:Vectic,duration:integer,count?:integer,gravity?:integer)
-p.sparks=function(origin,duration,count,gravity)
+p.remove=function(kind,unique)
+ Gochi:del(kind..unique)
+end
+
+p.FIRE='particle-fire-'
+
+---@type fun(origin:Vectic,duration:integer,count?:integer,unique?:string)
+p.fire=function(origin,duration,count,unique)
+ unique=unique or p.counter
+ p.counter=p.counter+1
+ count=count or 10
+
+ ---@type Particle[]
+ local parts={}
+ for _=1,count do
+  table.insert(parts,{
+   pos=origin:copy(),
+   vel=origin.rnd(-.3,.3,-.6,-.2),
+   r=math.random(5,7)
+  })
+ end
+
+ Gochi:add(p.FIRE..unique,duration,
+ function()
+  for _,v in ipairs(parts) do
+   local cor=2
+   if v.r<3 then cor=3 end
+   if v.r<1 then cor=4 end
+   circ(v.pos.x,v.pos.y,v.r,cor)
+   v.pos=v.pos+v.vel
+   if v.pos.x-origin.x>5 then v.pos.x=v.pos.x+math.random()*-2 end
+   if v.pos.x-origin.x<-5 then v.pos.x=v.pos.x+math.random()*2 end
+   v.r=v.r-.1
+   if v.r<=0 then
+    v.pos=origin:copy()
+    v.r=math.random(3,5)
+   end
+  end
+ end,
+ Gochi.void)
+end
+
+p.SPARKS='particle-sparks-'
+
+ ---@type fun(origin:Vectic,duration:integer,count?:integer,gravity?:integer,unique?:string)
+p.sparks=function(origin,duration,count,gravity,unique)
+ unique=unique or p.counter
+ p.counter=p.counter+1
  gravity=gravity or 1
  count=count or 10
  ---@type Particle[]
@@ -440,10 +497,10 @@ p.sparks=function(origin,duration,count,gravity)
  for _=1,count do
   table.insert(parts,{
    pos=origin:copy(),
-   vel=origin.rnd(-3,3,-3,3)
+   vel=origin.rnd(-3,-1,-3,-1)
   })
  end
- Gochi:add('particles-sparks-'..p.counter,duration,
+ Gochi:add(p.SPARKS..unique,duration,
  function()
   for _,v in ipairs(parts) do
    circ(v.pos.x,v.pos.y,math.random(1),math.random(2,4))
@@ -451,15 +508,11 @@ p.sparks=function(origin,duration,count,gravity)
    v.vel.y=v.vel.y+gravity
   end
  end,
- function()end)
- p.counter=p.counter+1
+ Gochi.void)
 end
 
 Gochi.particles=p
 Strg={}
-
-Strg.BORDERS=6
-Strg.BLOCKS=5
 
 ---@class PlayerStore
 ---@field high integer
@@ -469,7 +522,7 @@ Strg.BLOCKS=5
 
 ---@param tp TriPlayer
 Strg.save=function (tp,high)
- local ploc=(tp.id-1)*(7+Strg.BLOCKS+Strg.BORDERS)
+ local ploc=(tp.id-1)*(7)
  pmem(ploc,high)
  pmem(ploc+1,tp.block.l.id)
  pmem(ploc+2,tp.block.l.color)
@@ -482,41 +535,13 @@ end
 ---@param p integer
 ---@return PlayerStore
 Strg.load=function(p)
- local ploc=(p-1)*(7+Strg.BLOCKS+Strg.BORDERS)
+ local ploc=(p-1)*(7)
  local s={
   high=pmem(ploc),
   l={id=pmem(ploc+1),color=pmem(ploc+2)},
   i={id=pmem(ploc+3),color=pmem(ploc+4)},
   border={id=pmem(ploc+5),color=pmem(ploc+6)}}
  return s
-end
-
----@param p integer Player number id
----@param blck integer Block number (starts at 1)
-Strg.unlockBlock=function (p,blck)
- local ploc=(p-1)*(7+blck)
- pmem(ploc,1)
-end
-
----@param p integer Player number id
----@param blck integer Block number (starts at 1)
-Strg.hasBlock=function (p,blck)
- local ploc=(p-1)*(7+blck)
- pmem(ploc)
-end
-
----@param p integer Player number id
----@param brdr integer Border number (starts at 1)
-Strg.unlockBorder=function (p,brdr)
- local ploc=(p-1)*(7+Strg.BLOCKS+brdr)
- pmem(ploc,1)
-end
-
----@param p integer Player number id
----@param brdr integer Border number (starts at 1)
-Strg.hasBorder=function (p,brdr)
- local ploc=(p-1)*(7+Strg.BLOCKS+brdr)
- pmem(ploc)
 end
 ---@class Trimino
 Trimino={}
@@ -645,6 +670,7 @@ function CreatePlayer(id,blocks,border)
   speed=60
  }
 
+ local comborefresh=false
  local bpdelay=10
  local downdelay=5
  local downcount=0
@@ -752,7 +778,20 @@ function CreatePlayer(id,blocks,border)
   -- CPrint('LINES: '..s.lines,x,y+14,1,tp.border.color,true)
   ProgressBar(Vectic.new(x+47,y),combo.timer,comboTimeTo(),Vectic.new(20,5),tp.border.color,15)
   -- CPrint(combo.timer,x+8*s.wid,y,1,tp.border.color,true)
-  CPrint(combo.count,x+8*s.wid,y+7,1,tp.border.color,true)
+  if comborefresh then
+   comborefresh=false
+   Gochi.particles.remove(Gochi.particles.FIRE,s.id..'-combo')
+  end
+  if combo.count>1 then
+   Gochi.particles.fire(Vectic.new(x+8*s.wid,y+7),-1,5*combo.count,s.id..'-combo')
+   Gochi:add(s.id..'combo-count',-1,function ()
+    circ(x+8*s.wid+1,y+7+1,6,2)
+    circb(x+8*s.wid+1,y+7+1,6,12)
+    CPrint(combo.count,x+8*s.wid,y+7,1,12,true)
+   end,Gochi.void,0,true)
+  else
+   Gochi.particles.remove(Gochi.particles.FIRE,s.id..'-combo')
+  end
  end
 
  ---@param s TriPlayer
@@ -927,6 +966,7 @@ function CreatePlayer(id,blocks,border)
      Somchi.play(CLEAR,0,30+2*#cleared)
      playsfx=false
      combo.count=combo.count+math.ceil(#cleared*2)
+     comborefresh=true
      combo.timer=comboTimeTo()
     end
     CPrint(#cleared,tp.pos.x+(tp.wid+2)*4+1,tp.pos.y+21,2,0)
@@ -1129,19 +1169,6 @@ function menugen()
   Gochi.menu.makeButton('SHOP',Gochi.void,Gochi.menu.PUSH),
   Gochi.menu.makeButton('OPTIONS',Gochi.void,Gochi.menu.PUSH)},20,20)
 end
-for i=1,4 do
- local k=Strg.load(i)
- if k==0 then
-  Strg.save(CreatePlayer(i, {
-   l={color=3,id=256},
-   i={color=2,id=257}
-  },{
-   color=14,
-   id=0
-  }),0)
- end
-end
-
 Gochi.current=menugen()
 
 function TIC()
