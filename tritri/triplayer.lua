@@ -135,11 +135,12 @@ function CreatePlayer(id,blocks,border)
    Gochi.particles.remove(Gochi.particles.FIRE,s.id..'-combo')
   end
   if combo.count>1 then
-   Gochi.particles.fire(Vectic.new(x+8*s.wid,y+7),-1,5*combo.count,s.id..'-combo')
+   x=x-1
+   Gochi.particles.fire(Vectic.new(x+8*s.wid+1,y+7),-1,5*combo.count,s.id..'-combo')
    Gochi:add(s.id..'combo-count',-1,function ()
-    circ(x+8*s.wid+1,y+7+1,6,2)
-    circb(x+8*s.wid+1,y+7+1,6,12)
-    CPrint(combo.count,x+8*s.wid,y+7,1,12,true)
+    circ(x+8*s.wid+1,y+7+1,4,2)
+    -- circb(x+8*s.wid+1,y+7+1,6,12)
+    CPrint(combo.count,x+8*s.wid,y+6,1,12,true)
    end,Gochi.void,0,true)
   else
    Gochi.particles.remove(Gochi.particles.FIRE,s.id..'-combo')

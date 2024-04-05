@@ -61,7 +61,7 @@ p.sparks=function(origin,duration,count,gravity,unique)
  for _=1,count do
   table.insert(parts,{
    pos=origin:copy(),
-   vel=origin.rnd(-3,-1,-3,-1)
+   vel=origin.rnd(-2,2,-4,-1)
   })
  end
  Gochi:add(p.SPARKS..unique,duration,

@@ -15,8 +15,16 @@ function menugen()
    Gochi.trans(pgen(s.txt))
   end
  end
+ 
+ ---@param s MenuButton
+ local function shopselect(s)
+  if btnp(4) then
+   Gochi.trans(shopgen)
+  end
+ end
+
  return Gochi.menu.create({
   Gochi.menu.makeButton('1P',pselect,Gochi.menu.SELECT),
-  Gochi.menu.makeButton('SHOP',Gochi.void,Gochi.menu.PUSH),
+  Gochi.menu.makeButton('SHOP',shopselect,Gochi.menu.PUSH),
   Gochi.menu.makeButton('OPTIONS',Gochi.void,Gochi.menu.PUSH)},20,20)
 end

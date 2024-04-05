@@ -81,7 +81,8 @@ Gochi.add=function(s,name,t,run,kill,delay,forcetop)
   kill=function()
    kill()
    s:del(name)
-  end
+  end,
+  istop=forcetop
  }
 end
 
