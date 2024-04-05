@@ -862,12 +862,15 @@ function CreatePlayer(id,blocks,border)
  }
 
  local function comboTimeTo()
-  return combo.timeto-(combo.count-1)*30
+  local timeto=combo.timeto-(combo.count-1)*30
+  if timeto<60 then timeto=60 end
+  return timeto
  end
 
  local function updateCombo()
-  if combo.timer<=0 then
-   combo.count=1
+  if combo.timer<=0 and combo.count>1 then
+   combo.count=combo.count-1
+   combo.timer=comboTimeTo()
   else
    combo.timer=combo.timer-1
   end
@@ -953,22 +956,24 @@ function CreatePlayer(id,blocks,border)
   CPrint('PLAYER '..s.id,x,y,1,tp.border.color,true)
   CPrint('SCORE: '..s.score,x,y+7,1,tp.border.color,true)
   -- CPrint('LINES: '..s.lines,x,y+14,1,tp.border.color,true)
-  ProgressBar(Vectic.new(x+47,y),combo.timer,comboTimeTo(),Vectic.new(20,5),tp.border.color,15)
+  -- ProgressBar(Vectic.new(x+47,y),combo.timer,comboTimeTo(),Vectic.new(20,5),tp.border.color,15)
   -- CPrint(combo.timer,x+8*s.wid,y,1,tp.border.color,true)
   if comborefresh then
    comborefresh=false
+   Gochi:del(s.id..'-combo-count')
    Gochi.particles.remove(Gochi.particles.FIRE,s.id..'-combo')
   end
   if combo.count>1 then
    x=x-1
    Gochi.particles.fire(Vectic.new(x+8*s.wid+1,y+7),-1,5*combo.count,s.id..'-combo')
-   Gochi:add(s.id..'combo-count',-1,function ()
+   Gochi:add(s.id..'-combo-count',-1,function ()
     circ(x+8*s.wid+1,y+7+1,4,2)
     -- circb(x+8*s.wid+1,y+7+1,6,12)
     CPrint(combo.count,x+8*s.wid,y+6,1,12,true)
    end,Gochi.void,0,true)
   else
    Gochi.particles.remove(Gochi.particles.FIRE,s.id..'-combo')
+   Gochi:del(s.id..'-combo-count')
   end
  end
 
@@ -1165,6 +1170,32 @@ function CreatePlayer(id,blocks,border)
      fallBlocks()
      addScore(#cleared)
     end
+    local isclean=true
+    for _,ytbl in ipairs(tp.board) do
+     if not isclean then
+      break
+     end
+     for _,y in ipairs(ytbl) do
+      if y~='0' then
+       isclean=false
+       break
+      end
+     end
+    end
+    if isclean then
+     Gochi:add('full-clear',120,
+      function ()
+       CPrint('FULL CLEAR',tp.pos.x+4*(tp.wid+2)+1,50+1,2,15)
+       CPrint('FULL CLEAR',tp.pos.x+4*(tp.wid+2),50,2,12)
+       CPrint('+'..calcScore(tp.hei),tp.pos.x+4*(tp.wid+2)+1,70+1,2,15)
+       CPrint('+'..calcScore(tp.hei),tp.pos.x+4*(tp.wid+2),70,2,12)
+       if not isclean then
+        return
+       end
+       isclean=false
+       addScore(tp.hei)
+      end)
+    end
    end)
   end
  end
@@ -1233,6 +1264,8 @@ function CreatePlayer(id,blocks,border)
    tp:moveTri()
   else
    if spcount%60<30 then
+    Gochi:del(tp.id..'-combo-count')
+    Gochi.particles.remove(Gochi.particles.FIRE,tp.id..'-combo')
     CPrint('GAME OVER',tp.pos.x+tp.wid*4+8,tp.pos.y+tp.hei*4+8,1,2)
    end
   end
@@ -1252,7 +1285,7 @@ function pgen(p)
    },
    loaded.border)
   ps[i].pos.x=(i-1)*WID/pcount--+(ps[i].wid+2)*4
-  ps[i].pos.y=-2
+  ps[i].pos.y=0
   if pcount==1 then
    ps[1].pos.x=WID/2-(ps[1].wid+2)*4
   end
