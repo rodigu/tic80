@@ -4,13 +4,12 @@ function pgen(p)
  local ps={}
  local pcount=tonumber(p:sub(1,1))
  for i=1,pcount do
+  local loaded=Strg.load(i)
   ps[i]=CreatePlayer(i, {
-   l={color=3,id=256},
-   i={color=2,id=257}
-  },{
-   color=14,
-   id=0
-  })
+    l=loaded.l,
+    i=loaded.i
+   },
+   loaded.border)
   ps[i].pos.x=(i-1)*WID/pcount--+(ps[i].wid+2)*4
   ps[i].pos.y=-2
   if pcount==1 then
