@@ -46,3 +46,19 @@ Strg.load=function(p)
   border={id=pmem(ploc+5),color=pmem(ploc+6)}}
  return s
 end
+
+Strg.borderScore=function(item)
+ return (2^item)*10
+end
+
+Strg.blockScore=function(item)
+ return (3^item)*10
+end
+
+Strg.hasBorder=function(score,item)
+ return score>=Strg.borderScore(item)
+end
+
+Strg.hasBlock=function(score,item)
+ return score>=Strg.blockScore(item)
+end
