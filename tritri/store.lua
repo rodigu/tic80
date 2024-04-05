@@ -6,6 +6,19 @@ Strg={}
 ---@field i Block
 ---@field border Block
 
+Strg.setmem=function()
+ for i=1,4 do
+  if not Strg.has(i) then
+   Strg.save(CreatePlayer(i,{l={color=6,id=256},i={color=2,id=256}},{color=13,id=0}),0)
+  end
+ end
+end
+
+Strg.has=function (p)
+ local ploc=(p-1)*(8)
+ return pmem(ploc+7)==1
+end
+
 ---@param tp TriPlayer
 Strg.save=function (tp,high)
  local ploc=(tp.id-1)*(7)

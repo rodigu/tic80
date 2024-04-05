@@ -1,3 +1,5 @@
+Strg.setmem()
+
 Gochi.current=menugen()
 
 function TIC()
