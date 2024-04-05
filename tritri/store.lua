@@ -1,5 +1,9 @@
 Strg={}
 
+Strg.unlockFunc=function(score)
+ 
+end
+
 ---@class PlayerStore
 ---@field high integer
 ---@field l Block
