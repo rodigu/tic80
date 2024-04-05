@@ -19,8 +19,8 @@ function menu.makeButton(txt,onSelect,btype)
  return {txt=txt,onSelect=onSelect,type=btype}
 end
 
----@type fun(buttons:MenuButton[],x:number,y:number):Menu
-function menu.create(buttons,x,y)
+---@type fun(buttons:MenuButton[],x:number,y:number,docenter?:boolean):Menu
+function menu.create(buttons,x,y,docenter)
  local m={
   buttons=buttons,
   choice=0,
@@ -39,11 +39,15 @@ function menu.create(buttons,x,y)
    end
    if m.choice+1==i then
     color=12
-    local wid=CPrint(btxt,WID,HEI,bscale,color,true)
-    line(x,y+i*bscale*8+bscale*8*.8,x+wid-2,y+i*bscale*8+bscale*8*.8,12)
+    local wid=CPrint(btxt,WID,HEI,bscale,color,not docenter)
+    local lx=x
+    if docenter then
+     lx=lx-wid/2
+    end
+    line(lx,y+i*bscale*8+bscale*8*.8,lx+wid-2,y+i*bscale*8+bscale*8*.8,12)
     b:onSelect()
    end
-   CPrint(btxt,x,y+i*bscale*8,bscale,color,true)
+   CPrint(btxt,x,y+i*bscale*8,bscale,color,not docenter)
   end
  end
 
