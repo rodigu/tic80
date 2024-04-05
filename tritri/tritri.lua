@@ -388,8 +388,8 @@ function menu.makeButton(txt,onSelect,btype)
  return {txt=txt,onSelect=onSelect,type=btype}
 end
 
----@type fun(buttons:MenuButton[],x:number,y:number):Menu
-function menu.create(buttons,x,y)
+---@type fun(buttons:MenuButton[],x:number,y:number,docenter?:boolean):Menu
+function menu.create(buttons,x,y,docenter)
  local m={
   buttons=buttons,
   choice=0,
@@ -408,11 +408,15 @@ function menu.create(buttons,x,y)
    end
    if m.choice+1==i then
     color=12
-    local wid=CPrint(btxt,WID,HEI,bscale,color,true)
-    line(x,y+i*bscale*8+bscale*8*.8,x+wid-2,y+i*bscale*8+bscale*8*.8,12)
+    local wid=CPrint(btxt,WID,HEI,bscale,color,not docenter)
+    local lx=x
+    if docenter then
+     lx=lx-wid/2
+    end
+    line(lx,y+i*bscale*8+bscale*8*.8,lx+wid-2,y+i*bscale*8+bscale*8*.8,12)
     b:onSelect()
    end
-   CPrint(btxt,x,y+i*bscale*8,bscale,color,true)
+   CPrint(btxt,x,y+i*bscale*8,bscale,color,not docenter)
   end
  end
 
@@ -521,9 +525,25 @@ Strg={}
 ---@field i Block
 ---@field border Block
 
+Strg.setmem=function()
+ for i=1,4 do
+  if not Strg.has(i) then
+   Strg.save(CreatePlayer(i,{l={color=6,id=256},i={color=2,id=256}},{color=13,id=0}),0)
+  end
+ end
+end
+
+Strg.has=function (p)
+ local ploc=(p-1)*(8)
+ return pmem(ploc+7)==1
+end
+
 ---@param tp TriPlayer
 Strg.save=function (tp,high)
- local ploc=(tp.id-1)*(7)
+ if high==nil then
+  high=Strg.load(tp.id).high
+ end
+ local ploc=(tp.id-1)*(8)
  pmem(ploc,high)
  pmem(ploc+1,tp.block.l.id)
  pmem(ploc+2,tp.block.l.color)
@@ -531,18 +551,35 @@ Strg.save=function (tp,high)
  pmem(ploc+4,tp.block.i.color)
  pmem(ploc+5,tp.border.id)
  pmem(ploc+6,tp.border.color)
+ pmem(ploc+7,1)
 end
 
 ---@param p integer
 ---@return PlayerStore
 Strg.load=function(p)
- local ploc=(p-1)*(7)
+ local ploc=(p-1)*(8)
  local s={
   high=pmem(ploc),
   l={id=pmem(ploc+1),color=pmem(ploc+2)},
   i={id=pmem(ploc+3),color=pmem(ploc+4)},
   border={id=pmem(ploc+5),color=pmem(ploc+6)}}
  return s
+end
+
+Strg.borderScore=function(item)
+ return (2^item)*10
+end
+
+Strg.blockScore=function(item)
+ return (3^item)*10
+end
+
+Strg.hasBorder=function(score,item)
+ return score>=Strg.borderScore(item)
+end
+
+Strg.hasBlock=function(score,item)
+ return score>=Strg.blockScore(item)
 end
 ---@class Trimino
 Trimino={}
@@ -646,6 +683,145 @@ Trimino.draw=function(x,y,id,color)
  pal(12,color)
  spr(id,x,y,0)
  pal()
+end
+---@type StateGen
+function shopgen()
+ local loadPlayer=function(i)
+  local loaded=Strg.load(i)
+  return CreatePlayer(i, {
+    l=loaded.l,
+    i=loaded.i
+   },
+   loaded.border)
+ end
+
+ local player=loadPlayer(1)
+
+ local function pselect(s)
+  local pcount=tonumber(s.txt:sub(1,1))
+  if btnp(2) then
+   pcount=pcount-1
+   Strg.save(player)
+   player=loadPlayer(pcount)
+  end
+  if btnp(3) then
+   pcount=pcount+1
+   Strg.save(player)
+   player=loadPlayer(pcount)
+  end
+  s.txt=(math.floor(pcount))..'P'
+ end
+
+ ---@param s MenuButton
+ local function bordercor(s)
+  if btnp(2) then
+   player.border.color=player.border.color-1
+  end
+  if btnp(3) then
+   player.border.color=player.border.color+1
+  end
+ end
+
+ ---@param s MenuButton
+ local function borderstyle(s)
+  if btnp(2) then
+   player.border.id=player.border.id-16
+  end
+  if btnp(3) then
+   player.border.id=player.border.id+16
+  end
+ end
+
+ ---@param s MenuButton
+ local function lcor(s)
+  if btnp(2) then
+   player.block.l.color=player.block.l.color-1
+  end
+  if btnp(3) then
+   player.block.l.color=player.block.l.color+1
+  end
+ end
+
+ ---@param s MenuButton
+ local function lstyle(s)
+  if btnp(2) then
+   player.block.l.id=player.block.l.id-1
+  end
+  if btnp(3) then
+   player.block.l.id=player.block.l.id+1
+  end
+ end
+
+ ---@param s MenuButton
+ local function icor(s)
+  if btnp(2) then
+   player.block.i.color=player.block.i.color-1
+  end
+  if btnp(3) then
+   player.block.i.color=player.block.i.color+1
+  end
+ end
+
+ ---@param s MenuButton
+ local function istyle(s)
+  if btnp(2) then
+   player.block.i.id=player.block.i.id-1
+  end
+  if btnp(3) then
+   player.block.i.id=player.block.i.id+1
+  end
+ end
+
+ ---@param s MenuButton
+ local function back(s)
+  if btnp(4) then
+   Gochi.trans(menugen)
+   Strg.save(player)
+  end
+ end
+
+ local slctr=Gochi.menu.create({
+  Gochi.menu.makeButton('1P',pselect,'select'),
+  Gochi.menu.makeButton('  ',bordercor,'select'),
+  Gochi.menu.makeButton('  ',borderstyle,'select'),
+  Gochi.menu.makeButton('  ',lcor,'select'),
+  Gochi.menu.makeButton('  ',lstyle,'select'),
+  Gochi.menu.makeButton('  ',icor,'select'),
+  Gochi.menu.makeButton('  ',istyle,'select'),
+  Gochi.menu.makeButton('BACK',back,'push')
+ },120,0,true)
+
+ local function drw()
+  slctr:run()
+  local y=16
+  rect(114,y,11,5,player.border.color)
+  pal(12,player.border.color)
+  y=y+6
+  spr(player.border.id,114,y,0)
+  pal()
+
+  y=y+10
+  rect(114,y,11,5,player.block.l.color)
+  pal(12,player.block.l.color)
+  y=y+7
+  spr(player.block.l.id,116,y,0)
+  pal()
+
+  y=y+10
+  rect(114,y,11,5,player.block.i.color)
+  pal(12,player.block.i.color)
+  y=y+7
+  spr(player.block.i.id,116,y,0)
+  pal()
+  -- rectb(114,16,11,5,12)
+ end
+
+ return {
+  ---@param gc Gochi
+  run=function (gc)
+   drw()
+  end
+ }
 end
 ---@class Block
 ---@field color integer
@@ -1069,13 +1245,12 @@ function pgen(p)
  local ps={}
  local pcount=tonumber(p:sub(1,1))
  for i=1,pcount do
+  local loaded=Strg.load(i)
   ps[i]=CreatePlayer(i, {
-   l={color=3,id=256},
-   i={color=2,id=257}
-  },{
-   color=14,
-   id=0
-  })
+    l=loaded.l,
+    i=loaded.i
+   },
+   loaded.border)
   ps[i].pos.x=(i-1)*WID/pcount--+(ps[i].wid+2)*4
   ps[i].pos.y=-2
   if pcount==1 then
@@ -1166,11 +1341,21 @@ function menugen()
    Gochi.trans(pgen(s.txt))
   end
  end
+ 
+ ---@param s MenuButton
+ local function shopselect(s)
+  if btnp(4) then
+   Gochi.trans(shopgen)
+  end
+ end
+
  return Gochi.menu.create({
   Gochi.menu.makeButton('1P',pselect,Gochi.menu.SELECT),
-  Gochi.menu.makeButton('SHOP',Gochi.void,Gochi.menu.PUSH),
+  Gochi.menu.makeButton('SHOP',shopselect,Gochi.menu.PUSH),
   Gochi.menu.makeButton('OPTIONS',Gochi.void,Gochi.menu.PUSH)},20,20)
 end
+Strg.setmem()
+
 Gochi.current=menugen()
 
 function TIC()
