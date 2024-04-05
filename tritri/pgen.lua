@@ -11,7 +11,7 @@ function pgen(p)
    },
    loaded.border)
   ps[i].pos.x=(i-1)*WID/pcount--+(ps[i].wid+2)*4
-  ps[i].pos.y=-2
+  ps[i].pos.y=0
   if pcount==1 then
    ps[1].pos.x=WID/2-(ps[1].wid+2)*4
   end
