@@ -21,7 +21,10 @@ end
 
 ---@param tp TriPlayer
 Strg.save=function (tp,high)
- local ploc=(tp.id-1)*(7)
+ if high==nil then
+  high=Strg.load(tp.id).high
+ end
+ local ploc=(tp.id-1)*(8)
  pmem(ploc,high)
  pmem(ploc+1,tp.block.l.id)
  pmem(ploc+2,tp.block.l.color)
@@ -29,12 +32,13 @@ Strg.save=function (tp,high)
  pmem(ploc+4,tp.block.i.color)
  pmem(ploc+5,tp.border.id)
  pmem(ploc+6,tp.border.color)
+ pmem(ploc+7,1)
 end
 
 ---@param p integer
 ---@return PlayerStore
 Strg.load=function(p)
- local ploc=(p-1)*(7)
+ local ploc=(p-1)*(8)
  local s={
   high=pmem(ploc),
   l={id=pmem(ploc+1),color=pmem(ploc+2)},
