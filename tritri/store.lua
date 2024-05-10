@@ -41,9 +41,9 @@ Strg.load=function(p)
  local ploc=(p-1)*(8)
  local s={
   high=pmem(ploc),
-  l={id=pmem(ploc+1),color=pmem(ploc+2)},
-  i={id=pmem(ploc+3),color=pmem(ploc+4)},
-  border={id=pmem(ploc+5),color=pmem(ploc+6)}}
+  l={id=pmem(ploc+1) or 256,color=pmem(ploc+2) or 2},
+  i={id=pmem(ploc+3) or 257,color=pmem(ploc+4) or 6},
+  border={id=pmem(ploc+5) or 0,color=pmem(ploc+6) or 14}}
  return s
 end
 

@@ -560,9 +560,9 @@ Strg.load=function(p)
  local ploc=(p-1)*(8)
  local s={
   high=pmem(ploc),
-  l={id=pmem(ploc+1),color=pmem(ploc+2)},
-  i={id=pmem(ploc+3),color=pmem(ploc+4)},
-  border={id=pmem(ploc+5),color=pmem(ploc+6)}}
+  l={id=pmem(ploc+1) or 256,color=pmem(ploc+2) or 2},
+  i={id=pmem(ploc+3) or 257,color=pmem(ploc+4) or 6},
+  border={id=pmem(ploc+5) or 0,color=pmem(ploc+6) or 14}}
  return s
 end
 
@@ -963,7 +963,7 @@ function CreatePlayer(id,blocks,border)
    Gochi:del(s.id..'-combo-count')
    Gochi.particles.remove(Gochi.particles.FIRE,s.id..'-combo')
   end
-  if combo.count>1 then
+  if combo.count>1 and not tp.hasLost() then
    x=x-1
    Gochi.particles.fire(Vectic.new(x+8*s.wid+1,y+7),-1,5*combo.count,s.id..'-combo')
    Gochi:add(s.id..'-combo-count',-1,function ()
@@ -1391,7 +1391,8 @@ Strg.setmem()
 
 Gochi.current=menugen()
 
-VERSION='v0.1-alpha'
+VERSION='v0.4-alpha'
+
 
 function TIC()
  cls(0)
@@ -1415,11 +1416,25 @@ end
 
 -- <SPRITES>
 -- 000:ccccccc0c00000c0c0ccc0c0c0ccc0c0c0ccc0c0c00000c0ccccccc000000000
--- 001:0ccccc00c00000c0c00c00c0c0ccc0c0c00c00c0c00000c00ccccc0000000000
--- 002:c00000c00ccccc000ccccc000cc0cc000ccccc000ccccc00c00000c000000000
--- 003:00ccc0000c000c00c00000c0c00000c0c00000c00c000c0000ccc00000000000
--- 004:00ccc0000c000c00c0ccc0c0c0ccc0c0c0ccc0c00c000c0000ccc00000000000
+-- 001:ccccccc0c00000c0c00000c0c00000c0c00000c0c00000c0ccccccc000000000
+-- 002:0ccccc00c00000c0c00c00c0c0ccc0c0c00c00c0c00000c00ccccc0000000000
+-- 003:c00000c00ccccc000ccccc000cc0cc000ccccc000ccccc00c00000c000000000
+-- 004:00ccc0000c000c00c00000c0c00000c0c00000c00c000c0000ccc00000000000
+-- 005:00ccc0000c000c00c0ccc0c0c0ccc0c0c0ccc0c00c000c0000ccc00000000000
+-- 006:ccc0ccc0c00000c0c00000c0000c0000c00000c0c00000c0ccc0ccc000000000
+-- 007:cc000cc0c00000c000ccc00000c0c00000ccc000c00000c0cc000cc000000000
+-- 008:c0ccc0c000000000c0c0c0c0c00000c0c0c0c0c000000000c0ccc0c000000000
+-- 009:ccccccc0ccccccc0ccccccc0ccccccc0ccccccc0ccccccc0ccccccc000000000
+-- 010:0ccccc00c00000c0c0c0c0c0c0c0c0c0c0c0c0c0c00000c00ccccc0000000000
+-- 011:0ccccc00c00000c0c0c0c0c0c00000c0c0ccc0c0c00000c00ccccc0000000000
+-- 012:0ccccc00cc000cc0c0ccc0c0c0c0c0c0c0ccc0c0cc000cc00ccccc0000000000
+-- 013:c00c00c00000000000000000c00c00c00000000000000000c00c00c000000000
+-- 014:c00c00c00c0c0c0000ccc000ccccccc000ccc0000c0c0c00c00c00c000000000
+-- 015:cc000cc0c00000c0000000000000000000000000c00000c0cc000cc000000000
 -- 016:000000000c0c0c00c4c4c4c0c44444c0c44444c0c44444c0ccccccc000000000
+-- 017:0ddddd000d000d000d000d00ddddddd0d44044d0d44044d0ddddddd000000000
+-- 018:c00000c00000000000000000000000000000000000000000c00000c000000000
+-- 019:000000000000000000000000000c000000000000000000000000000000000000
 -- 255:cc0000000ccc000000cccc00000ccccc000ccccc00cccc000ccc0000cc000000
 -- </SPRITES>
 
@@ -1451,4 +1466,3 @@ end
 -- <PALETTE>
 -- 000:1a1c2c5d275db13e53ef7d57ffcd75a7f07038b76425717929366f3b5dc941a6f673eff7f4f4f494b0c2566c86333c57
 -- </PALETTE>
-

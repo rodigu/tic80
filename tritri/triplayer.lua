@@ -138,7 +138,7 @@ function CreatePlayer(id,blocks,border)
    Gochi:del(s.id..'-combo-count')
    Gochi.particles.remove(Gochi.particles.FIRE,s.id..'-combo')
   end
-  if combo.count>1 then
+  if combo.count>1 and not tp.hasLost() then
    x=x-1
    Gochi.particles.fire(Vectic.new(x+8*s.wid+1,y+7),-1,5*combo.count,s.id..'-combo')
    Gochi:add(s.id..'-combo-count',-1,function ()
