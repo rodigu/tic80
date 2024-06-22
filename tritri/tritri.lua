@@ -517,6 +517,43 @@ p.sparks=function(origin,duration,count,gravity,unique)
 end
 
 Gochi.particles=p
+function openinggen()
+
+ Gochi:add('opening-sequence', 1, Gochi.void, function ()
+  Gochi.trans(menugen,30)
+ end, 120)
+
+ local basex=96
+ local spd=5
+ local tri={
+  t={l='t',shook=false,v=Vectic.new(basex,-50)},
+  r={l='r',shook=false,v=Vectic.new(basex+8*3,-150)},
+  i={l='i',shook=false,v=Vectic.new(basex+8*5,-250)},
+ }
+
+ local moveletter=function(l)
+  if l.v.y>HEI/2-16 then
+   if not l.shook then
+    Gochi:shake('letter-shake-intro-'..l.l,l.v,5,1)
+    l.shook=true
+   end
+   return
+  end
+  l.v.y=l.v.y+spd
+ end
+
+ return {
+  ---@param gc Gochi
+  run=function (gc)
+   spr(480, tri.t.v.x, tri.t.v.y, 0, 1, 0, 0, 3, 2)
+   spr(483, tri.r.v.x, tri.r.v.y, 0, 1, 0, 0, 2, 2)
+   spr(485, tri.i.v.x, tri.i.v.y, 0, 1, 0, 0, 1, 2)
+   moveletter(tri.t)
+   moveletter(tri.r)
+   moveletter(tri.i)
+  end
+ }
+end
 Strg={}
 
 ---@class PlayerStore
@@ -1389,7 +1426,7 @@ function menugen()
 end
 Strg.setmem()
 
-Gochi.current=menugen()
+Gochi.current=openinggen()
 
 VERSION='v0.4-alpha'
 
@@ -1435,6 +1472,15 @@ end
 -- 017:0ddddd000d000d000d000d00ddddddd0d44044d0d44044d0ddddddd000000000
 -- 018:c00000c00000000000000000000000000000000000000000c00000c000000000
 -- 019:000000000000000000000000000c000000000000000000000000000000000000
+-- 224:2222222020000020202220202022202020222020200000202222222000000000
+-- 225:2222222020000020202220202022202020222020200000202222222000000000
+-- 226:2222222020000020202220202022202020222020200000202222222000000000
+-- 227:6666666060000060600000606000006060000060600000606666666000000000
+-- 228:6666666060000060600000606000006060000060600000606666666000000000
+-- 229:0099900009000900900000909000009090000090090009000099900000000000
+-- 241:2222222020000020202220202022202020222020200000202222222000000000
+-- 243:6666666060000060600000606000006060000060600000606666666000000000
+-- 245:0099900009000900909990909099909090999090090009000099900000000000
 -- 255:cc0000000ccc000000cccc00000ccccc000ccccc00cccc000ccc0000cc000000
 -- </SPRITES>
 

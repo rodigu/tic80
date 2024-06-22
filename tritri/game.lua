@@ -1,6 +1,6 @@
 Strg.setmem()
 
-Gochi.current=menugen()
+Gochi.current=openinggen()
 
 VERSION='v0.4-alpha'
 
