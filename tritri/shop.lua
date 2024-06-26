@@ -1,3 +1,15 @@
+function unlocked_border(total_score)
+ return math.floor(total_score / 100000)
+end
+
+function unlocked_l(total_score)
+ return math.floor(total_score / 10000)
+end
+
+function unlocked_i(total_score)
+ return math.floor(total_score / 10000)
+end
+
 ---@type StateGen
 function shopgen()
  local loadPlayer=function(i)
@@ -86,13 +98,31 @@ function shopgen()
   end
  end
 
+ local originals = {
+  border=player.border.id,
+  l=player.block.l.id,
+  i=player.block.i.id
+ }
+
+ local total_score=Strg.loadtotal()
+
  ---@param s MenuButton
  local function back(s)
   if btnp(4) then
+   if unlocked_border(total_score) < player.border.id then
+    player.border.id=originals.border
+   end
+   if unlocked_i(total_score) + 256 < player.block.i.id then
+    player.block.i.id=originals.i
+   end
+   if unlocked_l(total_score) + 256 < player.block.l.id then
+    player.block.l.id=originals.l
+   end
    Gochi.trans(menugen)
    Strg.save(player)
   end
  end
+
 
  local slctr=Gochi.menu.create({
   Gochi.menu.makeButton('1P',pselect,'select'),
@@ -105,27 +135,41 @@ function shopgen()
   Gochi.menu.makeButton('BACK',back,'push')
  },120,0,true)
 
+
  local function drw()
+  CPrint('total score: '..total_score,WID/2,HEI-30,1,12)
   slctr:run()
   local y=16
   rect(114,y,11,5,player.border.color)
   pal(12,player.border.color)
   y=y+6
-  spr(player.border.id,114,y,0)
+  if unlocked_border(total_score) < player.border.id then
+   spr(273,116,y,0)
+  else
+   spr(player.border.id,114,y,0)
+  end
   pal()
 
   y=y+10
   rect(114,y,11,5,player.block.l.color)
   pal(12,player.block.l.color)
   y=y+7
-  spr(player.block.l.id,116,y,0)
+  if unlocked_l(total_score) + 256 < player.block.l.id then
+   spr(273,116,y,0)
+  else
+   spr(player.block.l.id,116,y,0)
+  end
   pal()
 
   y=y+10
   rect(114,y,11,5,player.block.i.color)
   pal(12,player.block.i.color)
   y=y+7
-  spr(player.block.i.id,116,y,0)
+  if unlocked_i(total_score) + 256 < player.block.i.id then
+   spr(273,116,y,0)
+  else
+   spr(player.block.i.id,116,y,0)
+  end
   pal()
   -- rectb(114,16,11,5,12)
  end

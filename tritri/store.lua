@@ -6,9 +6,9 @@ Strg={}
 ---@field i Block
 ---@field border Block
 
-Strg.setmem=function()
+Strg.setmem=function(do_force)
  for i=1,4 do
-  if not Strg.has(i) then
+  if (do_force )or (not Strg.has(i)) then
    Strg.save(CreatePlayer(i,{l={color=6,id=256},i={color=2,id=256}},{color=13,id=0}),0)
   end
  end
@@ -33,6 +33,14 @@ Strg.save=function (tp,high)
  pmem(ploc+5,tp.border.id)
  pmem(ploc+6,tp.border.color)
  pmem(ploc+7,1)
+end
+
+Strg.savetotal=function(new_total)
+ pmem(200,new_total+Strg.loadtotal())
+end
+
+Strg.loadtotal=function()
+ return pmem(200)
 end
 
 ---@param p integer

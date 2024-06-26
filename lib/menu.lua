@@ -19,8 +19,9 @@ function menu.makeButton(txt,onSelect,btype)
  return {txt=txt,onSelect=onSelect,type=btype}
 end
 
----@type fun(buttons:MenuButton[],x:number,y:number,docenter?:boolean):Menu
-function menu.create(buttons,x,y,docenter)
+---@type fun(buttons:MenuButton[],x:number,y:number,docenter?:boolean, extra_drw?:function):Menu
+function menu.create(buttons,x,y,docenter, extra_drw)
+ extra_drw=extra_drw or function()end
  local m={
   buttons=buttons,
   choice=0,
@@ -65,6 +66,7 @@ function menu.create(buttons,x,y,docenter)
  m.run=function(_)
    ctrls()
    drw()
+   extra_drw()
  end
  return m
 end

@@ -1,8 +1,8 @@
 Strg.setmem()
 
-Gochi.current=openinggen()
+Gochi.current=menugen()--openinggen()
 
-VERSION='v0.4-alpha'
+VERSION='v0.6-alpha'
 
 
 function TIC()

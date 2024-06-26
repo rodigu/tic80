@@ -388,8 +388,9 @@ function menu.makeButton(txt,onSelect,btype)
  return {txt=txt,onSelect=onSelect,type=btype}
 end
 
----@type fun(buttons:MenuButton[],x:number,y:number,docenter?:boolean):Menu
-function menu.create(buttons,x,y,docenter)
+---@type fun(buttons:MenuButton[],x:number,y:number,docenter?:boolean, extra_drw?:function):Menu
+function menu.create(buttons,x,y,docenter, extra_drw)
+ extra_drw=extra_drw or function()end
  local m={
   buttons=buttons,
   choice=0,
@@ -434,6 +435,7 @@ function menu.create(buttons,x,y,docenter)
  m.run=function(_)
    ctrls()
    drw()
+   extra_drw()
  end
  return m
 end
@@ -562,9 +564,9 @@ Strg={}
 ---@field i Block
 ---@field border Block
 
-Strg.setmem=function()
+Strg.setmem=function(do_force)
  for i=1,4 do
-  if not Strg.has(i) then
+  if (do_force )or (not Strg.has(i)) then
    Strg.save(CreatePlayer(i,{l={color=6,id=256},i={color=2,id=256}},{color=13,id=0}),0)
   end
  end
@@ -589,6 +591,14 @@ Strg.save=function (tp,high)
  pmem(ploc+5,tp.border.id)
  pmem(ploc+6,tp.border.color)
  pmem(ploc+7,1)
+end
+
+Strg.savetotal=function(new_total)
+ pmem(200,new_total+Strg.loadtotal())
+end
+
+Strg.loadtotal=function()
+ return pmem(200)
 end
 
 ---@param p integer
@@ -721,6 +731,44 @@ Trimino.draw=function(x,y,id,color)
  spr(id,x,y,0)
  pal()
 end
+function genoptions()
+---@param s MenuButton
+local function reset(s)
+ if btnp(4) then
+  Strg.setmem(true)
+ end
+end
+
+ ---@param s MenuButton
+ local function back(s)
+  if btnp(4) then
+   Gochi.trans(menugen)
+  end
+ end
+
+ local slctr=Gochi.menu.create({
+  Gochi.menu.makeButton('RESET',reset,'push'),
+  Gochi.menu.makeButton('BACK',back,'push')
+ },120,0,true)
+
+ return {
+  run=function(gc)
+   slctr:run()
+  end
+ }
+end
+function unlocked_border(total_score)
+ return math.floor(total_score / 100000)
+end
+
+function unlocked_l(total_score)
+ return math.floor(total_score / 10000)
+end
+
+function unlocked_i(total_score)
+ return math.floor(total_score / 10000)
+end
+
 ---@type StateGen
 function shopgen()
  local loadPlayer=function(i)
@@ -809,13 +857,31 @@ function shopgen()
   end
  end
 
+ local originals = {
+  border=player.border.id,
+  l=player.block.l.id,
+  i=player.block.i.id
+ }
+
+ local total_score=Strg.loadtotal()
+
  ---@param s MenuButton
  local function back(s)
   if btnp(4) then
+   if unlocked_border(total_score) < player.border.id then
+    player.border.id=originals.border
+   end
+   if unlocked_i(total_score) + 256 < player.block.i.id then
+    player.block.i.id=originals.i
+   end
+   if unlocked_l(total_score) + 256 < player.block.l.id then
+    player.block.l.id=originals.l
+   end
    Gochi.trans(menugen)
    Strg.save(player)
   end
  end
+
 
  local slctr=Gochi.menu.create({
   Gochi.menu.makeButton('1P',pselect,'select'),
@@ -828,27 +894,41 @@ function shopgen()
   Gochi.menu.makeButton('BACK',back,'push')
  },120,0,true)
 
+
  local function drw()
+  CPrint('total score: '..total_score,WID/2,HEI-30,1,12)
   slctr:run()
   local y=16
   rect(114,y,11,5,player.border.color)
   pal(12,player.border.color)
   y=y+6
-  spr(player.border.id,114,y,0)
+  if unlocked_border(total_score) < player.border.id then
+   spr(273,116,y,0)
+  else
+   spr(player.border.id,114,y,0)
+  end
   pal()
 
   y=y+10
   rect(114,y,11,5,player.block.l.color)
   pal(12,player.block.l.color)
   y=y+7
-  spr(player.block.l.id,116,y,0)
+  if unlocked_l(total_score) + 256 < player.block.l.id then
+   spr(273,116,y,0)
+  else
+   spr(player.block.l.id,116,y,0)
+  end
   pal()
 
   y=y+10
   rect(114,y,11,5,player.block.i.color)
   pal(12,player.block.i.color)
   y=y+7
-  spr(player.block.i.id,116,y,0)
+  if unlocked_i(total_score) + 256 < player.block.i.id then
+   spr(273,116,y,0)
+  else
+   spr(player.block.i.id,116,y,0)
+  end
   pal()
   -- rectb(114,16,11,5,12)
  end
@@ -1351,7 +1431,9 @@ function scoreScreenGen(players)
  local high=0
  ---@type PlayerStore[]
  local highscores={}
+ local total_scoring=0
  for i=1,#players do
+  total_scoring=total_scoring+players[i].score
   highscores[i]=Strg.load(i).high
   if highscores[i]<players[i].score then
    Strg.save(players[i],players[i].score)
@@ -1361,6 +1443,7 @@ function scoreScreenGen(players)
   end
   iscores[i]=0
  end
+ Strg.savetotal(total_scoring)
 
  local ptadd=high/frms
  return {
@@ -1419,16 +1502,45 @@ function menugen()
   end
  end
 
+ ---@param s MenuButton
+ local function optionsselect(s)
+  if btnp(4) then
+   Gochi.trans(genoptions)
+  end
+ end
+
+ ---@type PlayerStore[]
+ local psaves={}
+ for i=1,4 do
+  psaves[i]=Strg.load(i)
+ end
+
+ local total_scoring=Strg.loadtotal()
+
+ local function mdrw()
+  rectb(130,20,100,80,12)
+  print('HIGH SCORES',150,10,12)
+  local sumhigh=0
+  for i=1,4 do
+    print('P'..i,135,20+10*i,psaves[i].border.color)
+    CPrint(psaves[i].high,180,20+10*i,1,psaves[i].border.color)
+    sumhigh=psaves[i].high+sumhigh
+  end
+
+  CPrint('all time total',180,32+10*5,1,12)
+  CPrint(total_scoring,180,40+10*5,1,12)
+ end
+
  return Gochi.menu.create({
   Gochi.menu.makeButton('1P',pselect,Gochi.menu.SELECT),
   Gochi.menu.makeButton('SHOP',shopselect,Gochi.menu.PUSH),
-  Gochi.menu.makeButton('OPTIONS',Gochi.void,Gochi.menu.PUSH)},20,20)
+  Gochi.menu.makeButton('OPTIONS',optionsselect,Gochi.menu.PUSH)},20,20,false,mdrw)
 end
 Strg.setmem()
 
-Gochi.current=openinggen()
+Gochi.current=menugen()--openinggen()
 
-VERSION='v0.4-alpha'
+VERSION='v0.6-alpha'
 
 
 function TIC()

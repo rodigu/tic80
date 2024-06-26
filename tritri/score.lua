@@ -7,7 +7,9 @@ function scoreScreenGen(players)
  local high=0
  ---@type PlayerStore[]
  local highscores={}
+ local total_scoring=0
  for i=1,#players do
+  total_scoring=total_scoring+players[i].score
   highscores[i]=Strg.load(i).high
   if highscores[i]<players[i].score then
    Strg.save(players[i],players[i].score)
@@ -17,6 +19,7 @@ function scoreScreenGen(players)
   end
   iscores[i]=0
  end
+ Strg.savetotal(total_scoring)
 
  local ptadd=high/frms
  return {
