@@ -1631,7 +1631,7 @@ function menugen()
 end
 Strg.setmem()
 
-Gochi.current=menugen()--openinggen()
+Gochi.current=openinggen()
 
 VERSION='b1.0'
 
