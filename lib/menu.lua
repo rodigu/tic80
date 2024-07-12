@@ -65,8 +65,8 @@ function menu.create(buttons,x,y,docenter, extra_drw)
  end
  m.run=function(_)
    ctrls()
-   drw()
    extra_drw()
+   drw()
  end
  return m
 end

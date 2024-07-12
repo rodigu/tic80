@@ -2,7 +2,7 @@ Strg.setmem()
 
 Gochi.current=menugen()--openinggen()
 
-VERSION='v0.6-alpha'
+VERSION='b1.0'
 
 
 function TIC()

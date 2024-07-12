@@ -38,8 +38,64 @@ function menugen()
 
  local total_scoring=Strg.loadtotal()
 
+ local blckfallanim=genfallblock(40)
+
+ local ctrl={
+  a=276,
+  z=277,
+  up=278,
+  down=279,
+  left=280,
+  right=281
+ }
+
+ local show_controls=function()
+  local x=15
+  local y=75
+  rect(x,y,60,50,0)
+  rectb(x,y,60,50,15)
+  CPrint('controls',x+31,y+5,1,12)
+  local A=ctrl.a
+  local Z=ctrl.z
+  local up=ctrl.up
+  local down=ctrl.down
+  local left=ctrl.left
+  local right=ctrl.right
+  if btn(4) or key(26) then
+   A=A+16
+   Z=Z+16
+  end
+  if btn(0) then
+   up=up+16
+  end
+  if btn(1) then
+   down=down+16
+  end
+  if btn(2) then
+   left=left+16
+  end
+  if btn(3) then
+   right=right+16
+  end
+  pal()
+  x=x+10
+  spr(A,x,y+17,0)
+  CPrint('or',x+5,y+29,1,12)
+  spr(Z,x,y+38,0)
+  x=x+25
+  spr(up,x,y+18,0)
+  spr(down,x,y+32,0)
+  spr(left,x-8,y+25,0)
+  spr(right,x+8,y+25,0)
+ end
+
  local function mdrw()
+  blckfallanim:run()
+  rect(120,5,120,105,0)
+  rectb(120,5,120,105,15)
   rectb(130,20,100,80,12)
+  rect(15,22,37,32,0)
+  rectb(15,22,37,32,15)
   print('HIGH SCORES',150,10,12)
   local sumhigh=0
   for i=1,4 do
@@ -50,6 +106,7 @@ function menugen()
 
   CPrint('all time total',180,32+10*5,1,12)
   CPrint(total_scoring,180,40+10*5,1,12)
+  show_controls()
  end
 
  return Gochi.menu.create({

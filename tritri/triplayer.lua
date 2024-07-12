@@ -368,7 +368,7 @@ function CreatePlayer(id,blocks,border)
         return
        end
        isclean=false
-       addScore(tp.hei)
+       addScore(tp.hei*2)
       end)
     end
    end)

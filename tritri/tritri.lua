@@ -1,9 +1,9 @@
--- title:   game title
--- author:  game developer, email, etc.
--- desc:    short description
--- site:    website link
--- license: MIT License (change this to your license of choice)
--- version: 0.1
+-- title:   tritri
+-- author:  rodigu
+-- desc:    falling block game
+-- site:    rodigu.github.io
+-- license: GPL
+-- version: b1.0
 -- script:  lua
 WID=240
 HEI=136
@@ -434,8 +434,8 @@ function menu.create(buttons,x,y,docenter, extra_drw)
  end
  m.run=function(_)
    ctrls()
-   drw()
    extra_drw()
+   drw()
  end
  return m
 end
@@ -553,6 +553,42 @@ function openinggen()
    moveletter(tri.t)
    moveletter(tri.r)
    moveletter(tri.i)
+  end
+ }
+end
+function genfallblock(bcount)
+ bcount = bcount or 30
+ local unlocked = math.floor(Strg.loadtotal()/10000)
+ local blocks={}
+ for i=0,bcount do
+  blocks[i]={
+   pos=Vectic.rnd(0,WID,0,HEI),
+   vel=math.random()+.1,
+   id=math.random(256,256+unlocked),
+   col=math.random(1,14)
+  }
+ end
+
+ local function genblck()
+  return {
+   pos=Vectic.rnd(0,WID,-12,-10),
+   vel=math.random()+.1,
+   id=math.random(256,256+unlocked),
+   col=math.random(1,14)
+  }
+ end
+
+ return {
+  run=function ()
+   for i=0,bcount do
+    local b=blocks[i]
+    pal(12,b.col)
+    spr(b.id,b.pos.x,b.pos.y,0,2)
+    b.pos.y=b.pos.y+b.vel
+    if b.pos.y>HEI then
+     blocks[i]=genblck()
+    end
+   end
   end
  }
 end
@@ -1310,7 +1346,7 @@ function CreatePlayer(id,blocks,border)
         return
        end
        isclean=false
-       addScore(tp.hei)
+       addScore(tp.hei*2)
       end)
     end
    end)
@@ -1517,8 +1553,64 @@ function menugen()
 
  local total_scoring=Strg.loadtotal()
 
+ local blckfallanim=genfallblock(40)
+
+ local ctrl={
+  a=276,
+  z=277,
+  up=278,
+  down=279,
+  left=280,
+  right=281
+ }
+
+ local show_controls=function()
+  local x=15
+  local y=75
+  rect(x,y,60,50,0)
+  rectb(x,y,60,50,15)
+  CPrint('controls',x+31,y+5,1,12)
+  local A=ctrl.a
+  local Z=ctrl.z
+  local up=ctrl.up
+  local down=ctrl.down
+  local left=ctrl.left
+  local right=ctrl.right
+  if btn(4) or key(26) then
+   A=A+16
+   Z=Z+16
+  end
+  if btn(0) then
+   up=up+16
+  end
+  if btn(1) then
+   down=down+16
+  end
+  if btn(2) then
+   left=left+16
+  end
+  if btn(3) then
+   right=right+16
+  end
+  pal()
+  x=x+10
+  spr(A,x,y+17,0)
+  CPrint('or',x+5,y+29,1,12)
+  spr(Z,x,y+38,0)
+  x=x+25
+  spr(up,x,y+18,0)
+  spr(down,x,y+32,0)
+  spr(left,x-8,y+25,0)
+  spr(right,x+8,y+25,0)
+ end
+
  local function mdrw()
+  blckfallanim:run()
+  rect(120,5,120,105,0)
+  rectb(120,5,120,105,15)
   rectb(130,20,100,80,12)
+  rect(15,22,37,32,0)
+  rectb(15,22,37,32,15)
   print('HIGH SCORES',150,10,12)
   local sumhigh=0
   for i=1,4 do
@@ -1529,6 +1621,7 @@ function menugen()
 
   CPrint('all time total',180,32+10*5,1,12)
   CPrint(total_scoring,180,40+10*5,1,12)
+  show_controls()
  end
 
  return Gochi.menu.create({
@@ -1540,7 +1633,7 @@ Strg.setmem()
 
 Gochi.current=menugen()--openinggen()
 
-VERSION='v0.6-alpha'
+VERSION='b1.0'
 
 
 function TIC()
@@ -1584,6 +1677,18 @@ end
 -- 017:0ddddd000d000d000d000d00ddddddd0d44044d0d44044d0ddddddd000000000
 -- 018:c00000c00000000000000000000000000000000000000000c00000c000000000
 -- 019:000000000000000000000000000c000000000000000000000000000000000000
+-- 020:0eeeeee0eee66eeeee6ee6eeee6ee6eeee6666eeee6ee6eefeeeeeef0ffffff0
+-- 021:000000000eeeeee00ecccce00eeecee00eeceee00ecccce00eeeeee00ffffff0
+-- 022:00eeeee00eeeceee0eecccee0eccccce0eeeceee0eeeceee0feeeeef00fffff0
+-- 023:00eeeee00eeeceee0eeeceee0eccccce0eecccee0eeeceee0feeeeef00fffff0
+-- 024:00eeeee00eeeceee0eecceee0eccccce0eecceee0eeeceee0feeeeef00fffff0
+-- 025:00eeeee00eeeceee0eeeccee0eccccce0eeeccee0eeeceee0feeeeef00fffff0
+-- 036:000000000eeeeee0eee66eeeee6ee6eeee6ee6eeee6666eeee6ee6ee0eeeeee0
+-- 037:00000000000000000eeeeee00ecccce00eeecee00eeceee00ecccce00eeeeee0
+-- 038:0000000000eeeee00eeeceee0eecccee0eccccce0eeeceee0eeeceee00eeeee0
+-- 039:0000000000eeeee00eeeceee0eeeceee0eccccce0eecccee0eeeceee00eeeee0
+-- 040:0000000000eeeee00eeeceee0eecceee0eccccce0eecceee0eeeceee00eeeee0
+-- 041:0000000000eeeee00eeeceee0eeeccee0eccccce0eeeccee0eeeceee00eeeee0
 -- 224:2222222020000020202220202022202020222020200000202222222000000000
 -- 225:2222222020000020202220202022202020222020200000202222222000000000
 -- 226:2222222020000020202220202022202020222020200000202222222000000000
