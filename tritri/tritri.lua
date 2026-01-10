@@ -820,12 +820,12 @@ function shopgen()
 
  local function pselect(s)
   local pcount=tonumber(s.txt:sub(1,1))
-  if btnp(2) then
+  if btnp(2) and pcount > 1 then
    pcount=pcount-1
    Strg.save(player)
    player=loadPlayer(pcount)
   end
-  if btnp(3) then
+  if btnp(3) and pcount < 4 then
    pcount=pcount+1
    Strg.save(player)
    player=loadPlayer(pcount)
@@ -1519,10 +1519,10 @@ function menugen()
  ---@param s MenuButton
  local function pselect(s)
   local pcount=tonumber(s.txt:sub(1,1))
-  if btnp(2) then
+  if btnp(2) and pcount > 1 then
    s.txt=(math.floor(s.txt:sub(1,1))-1)..'P'
   end
-  if btnp(3) then
+  if btnp(3) and pcount < 4 then
    s.txt=(math.floor(s.txt:sub(1,1))+1)..'P'
   end
   if btnp(4) then
